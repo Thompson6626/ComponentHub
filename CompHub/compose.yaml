@@ -1,0 +1,43 @@
+services:
+  postgres:
+    container_name: postgres-sql-comphub
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: compDB
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - spring-demo
+    restart: unless-stopped
+  mail-dev: # This image is for development
+    container_name: mail-dev-comphub
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+#  keycloak:
+#    container_name: keycloack-comphub
+#    image: quay.io/keycloak/keycloak:26.0.7
+#    ports:
+#      - "9090:8080"
+#    environment:
+#      KEYCLOAK_ADMIN: admin
+#      KEYCLOAK_ADMIN_PASSWORD: admin
+#    networks:
+#      - spring-demo
+#    command:
+#      - "start-dev"
+
+
+networks:
+  spring-demo:
+    driver: bridge
+
+volumes:
+  postgres:
+    driver: local
