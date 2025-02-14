@@ -5,14 +5,23 @@ import java.time.LocalDate;
 
 import com.comphub.component.category.dto.CategoryDto;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.*;
 
-public record ComponentShowcase(
-        Long id,
-        String name,
-        Set<CategoryDto> categories,
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class ComponentShowcase {
+
+        private Long id;
+        private String name;
+        private Set<CategoryDto> categories;
+        private String imageUrl;
+        private Creator creator;
         @JsonFormat(pattern = "yyyy-MM-dd")
-        LocalDate updatedAt,
-        String description
-) {
-
+        private LocalDate createdAt;
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        private LocalDate updatedAt;
+        private String description;
 }

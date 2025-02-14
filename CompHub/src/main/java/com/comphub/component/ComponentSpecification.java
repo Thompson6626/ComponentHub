@@ -1,61 +1,91 @@
 package com.comphub.component;
 
-import com.comphub.component.category.Category;
 import com.comphub.component.userComponentVote.UserComponentVote;
 
+import com.comphub.component.userComponentVote.VoteType;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 
 import java.util.Set;
 
 public class ComponentSpecification {
 
-    public static Specification<Component> hasCategories(Set<Category> categories) {
-        return (root, query, builder) -> {
-            if (categories == null || categories.isEmpty()) {
-                return builder.conjunction(); // return an empty condition if no categories are provided
-            }
-
-            // Join with the Category entity (assuming Component has a Set<Category> categories)
-            Join<Component, Category> categoryJoin = root.join("categories");
-
-            // Create a Predicate for each category in the set
-            Predicate[] categoryPredicates = categories.stream()
-                    .map(category -> builder.equal(categoryJoin, category))  // Compare with the given category
-                    .toArray(Predicate[]::new);
-
-            // Combine all the predicates using AND to ensure that the component has all the categories
-            return builder.and(categoryPredicates);
+    private static Specification<Component> sortBy(String field, boolean descending) {
+        return (root, query, criteriaBuilder) -> {
+            query.orderBy(descending
+                    ? criteriaBuilder.desc(root.get(field))
+                    : criteriaBuilder.asc(root.get(field))
+            );
+            return criteriaBuilder.conjunction();
         };
     }
+
 
     public static Specification<Component> sortByVotes(boolean sortByUpvotes) {
         return (root, query, criteriaBuilder) -> {
-            // Join the votes table
             Join<Component, UserComponentVote> votes = root.join("votes", JoinType.LEFT);
 
-            // Filter votes by type
             Predicate voteTypePredicate = criteriaBuilder.equal(
                     votes.get("voteType"),
-                    sortByUpvotes ? UserComponentVote.VoteType.UPVOTE : UserComponentVote.VoteType.DOWNVOTE
+                    sortByUpvotes ? VoteType.UPVOTE : VoteType.DOWNVOTE
             );
 
-            // Aggregate and count votes of the specific type
-            Expression<Long> voteCount = criteriaBuilder.count(criteriaBuilder.selectCase()
-                    .when(voteTypePredicate, votes.get("id"))
-                    .otherwise((Long) null));
+            Expression<Long> voteCount = criteriaBuilder.count(votes);
 
-            // Group by component ID to avoid duplicates
-            assert query != null;
             query.groupBy(root.get("id"));
+            query.orderBy(sortByUpvotes
+                    ? criteriaBuilder.desc(voteCount)
+                    : criteriaBuilder.asc(voteCount));
 
-            // Apply sorting
-            query.orderBy(criteriaBuilder.desc(voteCount));
-
-            return null; // This modifies the query and doesn't need a predicate
+            return criteriaBuilder.conjunction();
         };
     }
 
+    public static Specification<Component> filterByUsername(String username) {
+        return (root, query, builder) -> StringUtils.hasText(username)
+                ? builder.equal(root.get("user").get("username"), username)
+                : builder.conjunction();
+    }
 
+
+    public static Specification<Component> applySorting(String sortBy, String order) {
+        boolean descending = order.equals("desc");
+
+        return switch (sortBy) {
+            case "name", "createdAt", "updatedAt" -> sortBy(sortBy, descending);
+            case "upVotes" -> sortByVotes(descending);
+            default -> throw new IllegalArgumentException("Invalid sort by: " + sortBy);
+        };
+    }
+    public static Specification<Component> searchByName(String name) {
+        return (root, query, criteriaBuilder) -> {
+            var exactMatch = criteriaBuilder.equal(criteriaBuilder.lower(root.get("name")), name.toLowerCase());
+            var containsMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + name.toLowerCase() + "%");
+
+            query.orderBy(
+                    criteriaBuilder.desc(criteriaBuilder.selectCase()
+                            .when(exactMatch, 1)
+                            .otherwise(0)), // Order by exact match first
+                    criteriaBuilder.asc(root.get("name")) // Then alphabetically
+            );
+
+            return criteriaBuilder.or(exactMatch, containsMatch);
+        };
+    }
+
+    public static Specification<Component> findByCategoryNames(Set<String> categoryNames) {
+        return (root, query, criteriaBuilder) -> {
+            var categoriesJoin = root.join("categories", JoinType.INNER);
+
+            Predicate categoryPredicate = categoriesJoin.get("name").in(categoryNames);
+
+            query.groupBy(root.get("id"));
+            query.having(criteriaBuilder.equal(
+                    criteriaBuilder.countDistinct(categoriesJoin.get("name")), categoryNames.size()));
+
+            return categoryPredicate;
+        };
+    }
 
 }

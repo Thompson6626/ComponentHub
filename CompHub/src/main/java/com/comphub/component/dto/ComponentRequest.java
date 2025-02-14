@@ -9,6 +9,6 @@ public record ComponentRequest(
         @NotBlank(message = "Name cannot be empty")
         String name,
         String description,
-        Set<Long> categoriIds
+        Set<Long> categoryIds
 ) {
 }

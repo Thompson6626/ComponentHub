@@ -7,11 +7,13 @@ import com.comphub.component.userComponentVote.UserComponentVote;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,7 +36,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "verification_code",unique = true, length = 36)
+    private String profilePictureUrl;
+
+    @Column(name = "verification_code",unique = true, length = 50)
     private String verificationToken;
     @Column(name = "verification_expiration")
     private Instant verificationTokenExpiresAt;
@@ -42,10 +46,18 @@ public class User implements UserDetails {
     private boolean accountLocked;
     private boolean enabled;
 
+    private boolean accountExpired;
+    private boolean credentialsExpired;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime joinDate;
+
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<Token> tokens;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id",nullable = false)
     private Role role;
 
@@ -57,12 +69,12 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.getName()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.getName()));
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return !accountExpired;
     }
 
     @Override
@@ -72,7 +84,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return !credentialsExpired;
     }
 
     @Override

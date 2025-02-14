@@ -1,0 +1,92 @@
+@let componentPage = componentPage$ | async;
+
+<!-- Categories Sidebar & Main Content -->
+<div class="flex flex-col md:flex-row gap-6">
+  <!-- Categories Sidebar -->
+  <div class="flex flex-col gap-4 w-full md:w-1/6 p-6 bg-gray-100 rounded-lg shadow-sm">
+    @if (categoryList$ | async; as categories) {
+      @if (categories.state === State.Loaded) {
+        <div class="text-lg font-semibold text-gray-900">Categories</div>
+        @for (category of categories.data; track category.id) {
+          <label class="text-black text-lg flex items-center gap-2">
+            <p-checkbox
+              binary="true"
+              (onChange)="onCategorySelected($event, category.name)"
+              size="large"
+            ></p-checkbox>
+            {{ category.name }}
+          </label>
+        }
+      }
+    }
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="flex flex-col w-full md:w-5/6 px-6">
+    <!-- Sorting & Ordering -->
+    @if (componentPage && componentPage.state === State.Loaded && componentPage.data.content.length > 0) {
+      <div class="flex flex-wrap gap-2 p-4 bg-white rounded-lg shadow-md mb-4 justify-end">
+        <p-select
+          [options]="sortItems"
+          optionLabel="label"
+          [(ngModel)]="defaultItemsValue"
+          (onChange)="updateSortBy($event)"
+          styleClass="w-full md:w-56"
+        />
+        <p-select
+          [options]="orderItems"
+          optionLabel="label"
+          [(ngModel)]="defaultOrderValue"
+          (onChange)="updateOrder($event)"
+          styleClass="w-full md:w-56"
+        />
+      </div>
+    }
+
+    <!-- Component Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      @if (componentPage) {
+        @switch (componentPage.state) {
+          @case (State.Loading) {
+            <div class="col-span-4 flex justify-center items-center h-full w-full min-h-[400px]">
+              <p-progress-spinner ariaLabel="loading" styleClass="translate-x-[-155px] translate-y-[100px]" />
+            </div>
+          }
+          @case (State.Error) {
+            <div class="col-span-4 flex justify-center items-center h-full w-full min-h-[400px]">
+              <p class="text-xl text-red-500 font-semibold translate-x-[-150px]">
+                Something went wrong. Please try again later.
+              </p>
+            </div>
+          }
+          @case (State.Loaded) {
+            @for (component of componentPage.data.content; track component.id) {
+              <app-component-card [component]="component"/>
+            }
+            @empty {
+              <div class="col-span-4 text-center">
+                <p class="text-lg font-semibold text-gray-500">No components to show</p>
+              </div>
+            }
+          }
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Pagination -->
+@if (componentPage && componentPage.state === State.Loaded && componentPage.data.content.length > 0) {
+  <div class="card flex justify-center pt-8 pb-8 items-center">
+    <p-paginator
+      (onPageChange)="onPageChange($event)"
+      [first]="first"
+      [rows]="size"
+      [totalRecords]="totalItems"
+      [rowsPerPageOptions]="pageSizeOptions"
+      pageLinkSize="10"
+      showCurrentPageReport="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} results"
+    />
+  </div>
+}

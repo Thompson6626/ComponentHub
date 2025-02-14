@@ -3,6 +3,7 @@ package com.comphub.component.category;
 
 import com.comphub.component.category.dto.CategoryDto;
 import com.comphub.component.category.dto.CategoryRequest;
+import com.comphub.component.category.dto.CategoryUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
@@ -25,7 +27,6 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
     public CategoryDto createCategory(
             CategoryRequest request
     ) {
@@ -35,8 +36,7 @@ public class CategoryService {
         return categoryMapper.toResponse(category);
     }
 
-    @Transactional
-    public CategoryDto updateCategory(Long id, CategoryRequest request) {
+    public CategoryDto updateCategory(Long id, CategoryUpdateRequest request) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Category with id " + id + " not found"));
 
@@ -48,6 +48,6 @@ public class CategoryService {
     }
 
     public void deleteCategory(Long categoryId) {
-
+        categoryRepository.deleteById(categoryId);
     }
 }

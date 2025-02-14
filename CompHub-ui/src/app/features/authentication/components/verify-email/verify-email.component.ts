@@ -1,5 +1,5 @@
 import {Component, inject, OnInit} from '@angular/core';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '../../services/Auth/auth.service';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import { Button } from 'primeng/button';
 
@@ -11,8 +11,8 @@ import { Button } from 'primeng/button';
 })
 export class VerifyEmailComponent implements OnInit {
 
-  private _authService = inject(AuthService)
-  private _activatedRoute = inject(ActivatedRoute)
+  private authService = inject(AuthService)
+  private activatedRoute = inject(ActivatedRoute)
 
   failure = false;
   success = false;
@@ -22,14 +22,14 @@ export class VerifyEmailComponent implements OnInit {
   }
 
   async verifyEmail(): Promise<void> {
-    const token = this._activatedRoute.snapshot.paramMap.get('token');
+    const token = this.activatedRoute.snapshot.paramMap.get('token');
 
     if (!token) {
       this.failure = true;
       return;
     }
 
-    const response = this._authService.verifyEmail(token);
+    const response = this.authService.verifyEmail(token);
     response.subscribe({
       next: result => {
         this.success = true;

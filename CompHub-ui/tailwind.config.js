@@ -9,7 +9,6 @@ module.exports = {
   },
   corePlugins :{ preflight: false },
   plugins: [
-    //require('daisyui'),
     require('tailwindcss-primeui')
   ],
 }

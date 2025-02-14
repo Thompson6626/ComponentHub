@@ -1,4 +1,0 @@
-
-interface FrontendComponentConfig{
-  componentBaseUrl: string;
-}

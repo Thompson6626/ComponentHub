@@ -1,5 +1,7 @@
 package com.comphub.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,14 +11,14 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
+import static org.springframework.http.HttpMethod.*;
 import static org.springframework.security.config.Customizer.withDefaults;
-import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpMethod.GET;
 
 
 @Configuration
@@ -30,6 +32,29 @@ public class SecurityConfig {
         "/auth/**",
     };
 
+    private static final String[] GET_PUBLIC_ENDPOINTS = {
+            // Component
+            "/components",
+            "/components/user/{username}/component/{componentName}",
+            "/components/{componentId}",
+            "/components/user/{username}",
+            "/components/categories",
+            "/components/user/{username}/names",
+            // Component file
+            "/components/files/{fileId}",
+            // Component category
+            "/components/category",
+            // Users
+            "/users/{username}"
+    };
+
+    private static final String[] AUTHENTICATED_ENDPOINTS = {
+            "/components/**",
+            "/components/files/**",
+            "/components/category/**"
+    };
+
+
     private final JwtFilter jwtFilter;
     private final AuthenticationProvider authenticationProvider;
     private final LogoutHandler logoutHandler;
@@ -40,44 +65,29 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(POST,"/components").authenticated()
-                        .requestMatchers(GET,
-                                // Component
-                                "/components/{componentId}",
-                                "/components/user/{username}",
-                                "/components/categories",
-                                "/components/user/{username}/names",
-                                // Component file
-                                "/components/files/{fileId}",
-                                // Component category
-                                "/components/category"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/components/**",
-                                "/components/files/**",
-                                "/components/category/**"
-                        ).authenticated()
                         .requestMatchers(WHITE_LIST).permitAll()
+                        .requestMatchers(GET,GET_PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(POST,"/components").authenticated()
+                        .requestMatchers(AUTHENTICATED_ENDPOINTS).authenticated()
+                        .requestMatchers(POST,"/components/category").hasAnyRole("ADMIN" , "SUPER_ADMIN")
+                        .requestMatchers(DELETE, "/components/{categoryId}").hasAnyRole("ADMIN" , "SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(withDefaults())
-                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout(logout ->
                         logout.logoutUrl("/auth/logout")
                                 .addLogoutHandler(logoutHandler)
-                                .logoutSuccessHandler((request, response, authentication) ->{
-                                    SecurityContextHolder.clearContext();
-                                })
+                                .logoutSuccessHandler(this::clearSecurityContext)
                 )
                 .build();
     }
 
-
+    private void clearSecurityContext(HttpServletRequest request, HttpServletResponse response, Authentication auth) {
+        SecurityContextHolder.clearContext();
+    }
 
 }

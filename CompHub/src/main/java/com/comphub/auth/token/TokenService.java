@@ -2,76 +2,83 @@ package com.comphub.auth.token;
 
 
 import com.comphub.user.User;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import javax.crypto.SecretKey;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.stream.Collectors;
+import java.util.Date;
+import java.util.Map;
 
 @Service
 public class TokenService {
-
+    @Value("${security.jwt.secret-key}")
+    private String secretKey;
     @Value("${security.jwt.expiration}")
     private long jwtExpiration;
     @Value("${security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
-    private final JwtEncoder encoder;
-    private final JwtDecoder decoder;
-
-    public TokenService(JwtEncoder encoder, JwtDecoder decoder) {
-        this.encoder = encoder;
-        this.decoder = decoder;
+    public String extractUsername(String token) {
+        return Jwts.parser()
+                .verifyWith(getSignInKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
     }
 
-    public String extractUsername(final String token) {
-        return decoder.decode(token).getSubject();
-    }
-    public Instant extractExpiration(final String token) {
-        return decoder.decode(token).getExpiresAt();
+    public TokenWrapper generateToken(final User user) {
+        return buildToken(user, refreshExpiration);
+
     }
 
-    public String generateToken(final User user){
-        return buildToken(user,jwtExpiration);
-    }
-    public String generateRefreshToken(final User user){
-        return buildToken(user,refreshExpiration);
+    public TokenWrapper generateRefreshToken(final User user) {
+        return buildToken(user, refreshExpiration);
     }
 
-    public String buildToken(User user,long expireTime) {
-        var now = Instant.now();
-        // Filtering and only getting everything that its not roles
-        String scope = user.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .filter(authority -> !authority.startsWith("ROLE"))
-                .collect(Collectors.joining(" "));
+    private TokenWrapper buildToken(final User user, final long expiration) {
+        var now = LocalDateTime.now();
+        var expiresAt = now.plus(expiration, ChronoUnit.MILLIS);
 
-        var claims = JwtClaimsSet.builder()
-                .id(user.getId().toString())
-                .issuer("self")
-                .issuedAt(now)
-                .expiresAt(now.plus(expireTime, ChronoUnit.MILLIS))
-                .subject(user.getEmail())
-                .claims(cl ->{
-                        cl.put("name",user.getUsername());
-                        cl.put("scope",scope);
-                })
-                .build();
-
-        var encoderParameters = JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS512).build(), claims);
-        return this.encoder.encode(encoderParameters).getTokenValue();
+        return new TokenWrapper(
+                Jwts
+                .builder()
+                .claims(Map.of("email", user.getEmail()))
+                .subject(user.getUsername())
+                .issuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))
+                .expiration(Date.from(expiresAt.atZone(ZoneId.systemDefault()).toInstant()))
+                .signWith(getSignInKey())
+                .compact(),
+                expiresAt
+        );
     }
-
 
     public boolean isTokenValid(String token, User user) {
         final String username = extractUsername(token);
-        return username.equals(user.getUsername()) && !isTokenExpired(token);
+        return (username.equals(user.getUsername())) && !isTokenExpired(token);
     }
+
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).isBefore(Instant.now());
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return Jwts.parser()
+                .verifyWith(getSignInKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+    }
+
+    private SecretKey getSignInKey() {
+        final byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

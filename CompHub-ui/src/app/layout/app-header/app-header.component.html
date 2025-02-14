@@ -1,0 +1,59 @@
+<header class="flex items-center justify-between p-4 bg-gray-800 text-white">
+  <!-- Logo -->
+  <div class="flex items-center space-x-4 cursor-pointer">
+    <h1
+      [routerLink]="['/search']"
+      [queryParams]="{}"
+      queryParamsHandling="replace"
+      class="text-xl font-semibold cursor-pointer"
+    >
+      ComponentHub
+    </h1>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="flex-grow mx-4 flex justify-center">
+    <div class="space-x-4 w-full sm:w-[850px]">
+      <div class="flex items-center space-x-2 bg-gray-700 rounded-md border border-gray-600">
+        <i class="pi pi-search p-3"></i>
+        <input
+          #searchInput
+          [(ngModel)]="searchQuery"
+          (keydown.enter)="onSearch(searchInput.value)"
+          type="text"
+          placeholder="Search components..."
+          class="w-full p-4 bg-gray-700 text-white rounded-md border border-none focus:outline-none placeholder-gray-400"
+        />
+        <i
+          class="pi pi-times text-white cursor-pointer hover:bg-white hover:bg-opacity-20 rounded-full p-4 transition-all duration-300 ease-in-out"
+          (click)="searchInput.value = ''">
+        </i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex items-center space-x-6">
+    @let userDetails = authStateService.userDetails$ | async;
+    @if (userDetails) {
+      <div class="card flex justify-center">
+        <p-splitbutton
+          [label]="userDetails.username || 'Account'"
+          icon="pi pi-user"
+          dropdownIcon="pi pi-angle-down"
+          [model]="items"
+          severity="secondary">
+        </p-splitbutton>
+      </div>
+    } @else {
+      <div class="flex items-center space-x-3 mr-7">
+        <p routerLink="/auth/login" class="cursor-pointer px-5 py-2 rounded-lg border border-gray-500 text-gray-300 hover:bg-gray-700 hover:border-gray-400 transition duration-300">
+          Login
+        </p>
+        <p routerLink="/auth/register" class="cursor-pointer px-5 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold transition duration-300">
+          Register
+        </p>
+      </div>
+    }
+  </nav>
+</header>

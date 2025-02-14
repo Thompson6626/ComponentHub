@@ -2,13 +2,15 @@ package com.comphub.component.componentFile;
 
 import com.comphub.component.Component;
 import com.comphub.component.ComponentRepository;
-import com.comphub.component.componentFile.dto.ComponentFileDto;
+import com.comphub.component.componentFile.dto.ComponentFileMetaData;
+import com.comphub.component.componentFile.dto.ComponentFileResponse;
 import com.comphub.exception.FileProcessingException;
 import com.comphub.exception.UnauthorizedAccessException;
 import com.comphub.user.User;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -16,20 +18,21 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ComponentFileService {
 
     private final ComponentRepository componentRepository;
     private final ComponentFileRepository componentFileRepository;
     private final ComponentFileMapper componentFileMapper;
 
-    public ComponentFileDto getComponentFileById(Long id) {
+    public ComponentFileResponse getComponentFileById(Long id) {
         ComponentFile file = componentFileRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Component with id " + id + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("File with id " + id + " not found"));
 
         return componentFileMapper.toResponse(file);
     }
 
-    public ComponentFileDto uploadFileToComponent(MultipartFile file, Long componentId, User user) {
+    public ComponentFileResponse uploadFileToComponent(MultipartFile file, Long componentId, User user) {
         validateFile(file);
 
         Component component = componentRepository.findById(componentId)
@@ -40,16 +43,11 @@ public class ComponentFileService {
         }
 
         try{
-            ComponentFile componentFile = ComponentFile.builder()
-                    .filename(file.getOriginalFilename())
-                    .size(file.getSize())
-                    .fileContent(file.getBytes())
-                    .component(component)
-                    .build();
+            ComponentFile componentFile = componentFileMapper.toEntity(file,component);
 
-            component.getFiles().add(componentFile);
+            component.setFile(componentFile);
 
-            componentRepository.save(component);
+            //componentRepository.save(component);
             ComponentFile savedFile = componentFileRepository.save(componentFile);
 
             return componentFileMapper.toResponse(savedFile);
@@ -59,8 +57,8 @@ public class ComponentFileService {
     }
 
     private void validateFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File cannot be null or empty");
+        if (file == null || file.isEmpty() || file.getSize() == 0) {
+            throw new FileProcessingException("Cannot upload an empty file or folder.");
         }
     }
 
@@ -68,7 +66,7 @@ public class ComponentFileService {
         return component.getUser() != null && Objects.equals(component.getUser().getId(), user.getId());
     }
 
-    public void deleteComponent(Long id, User user) {
+    public void deleteFile(Long id, User user) {
         ComponentFile fileFound = componentFileRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Component with id " + id + " not found"));
 
@@ -79,7 +77,7 @@ public class ComponentFileService {
         componentFileRepository.deleteById(id);
     }
 
-    public ComponentFileDto updateFile(MultipartFile file, Long fileId, User user) {
+    public ComponentFileResponse updateFile(MultipartFile file, Long fileId, User user) {
         ComponentFile fileFound = componentFileRepository.findById(fileId)
         .orElseThrow(() -> new EntityNotFoundException("ComponentFile with id " + fileId + " not found"));
 

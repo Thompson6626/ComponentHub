@@ -1,17 +1,20 @@
 import { Routes } from '@angular/router';
+import {RegisterComponent} from './components/register/register.component';
+import {LoginComponent} from './components/login/login.component';
+import {VerifyEmailComponent} from './components/verify-email/verify-email.component';
 
-export default [
+export const authRotes: Routes = [
   {
     path: 'register',
-    loadComponent: () => import('./components/register/register.component').then(m => m.RegisterComponent)
+    component: RegisterComponent
   },
   {
     path: 'login',
-    loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent)
+    component: LoginComponent
   },
   {
     path: 'verify',
-    loadComponent: () => import('./components/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
+    component: VerifyEmailComponent
   },
   {
     path: 'resend-verification',
@@ -19,10 +22,7 @@ export default [
   },
   {
     path: 'email-sent',
-    loadComponent: () => import('./components/email-sent/email-sent.component').then(m => m.EmailSentComponent)
+    loadComponent:() => import('./components/email-sent/email-sent.component').then(m => m.EmailSentComponent)
   },
-  {
-    path: '**',
-    redirectTo: 'notFound'
-  }
-] as Routes;
+  { path: '**', redirectTo: '/notFound' }
+];

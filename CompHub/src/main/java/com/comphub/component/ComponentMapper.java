@@ -5,13 +5,12 @@ import com.comphub.component.componentFile.ComponentFileMapper;
 import com.comphub.component.dto.ComponentRequest;
 import com.comphub.component.dto.ComponentResponse;
 import com.comphub.component.dto.ComponentShowcase;
-import com.comphub.component.userComponentVote.UserComponentVote;
+import com.comphub.component.dto.Creator;
+import com.comphub.component.userComponentVote.VoteType;
 import com.comphub.user.User;
 
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,49 +25,60 @@ public class ComponentMapper {
     }
 
     public ComponentShowcase toShowcase(Component component, CategoryMapper mapper){
-        return new ComponentShowcase(
-                component.getId(),
-                component.getName(),
-                component.getCategories().stream()
+        final var owner = component.getUser();
+        return ComponentShowcase.builder()
+                .id(component.getId())
+                .name(component.getName())
+                .creator(Creator.builder()
+                        .id(owner.getId())
+                        .username(owner.getUsername())
+                        .build())
+                .categories(
+                        component.getCategories().stream()
                         .map(mapper::toShowCase)
-                        .collect(Collectors.toSet()),
-                component.getUpdatedAt().toLocalDate(),
-                component.getDescription()
-        );
+                        .collect(Collectors.toSet())
+                )
+                .createdAt(component.getCreatedAt().toLocalDate())
+                .updatedAt(component.getUpdatedAt().toLocalDate())
+                .description(component.getDescription())
+                .build();
     }
 
     public ComponentResponse toResponse(Component component,CategoryMapper categoryMapper){
-        return new ComponentResponse(
-                component.getName(),
-                component.getDescription(),
-                component.getCategories().stream()
+        return ComponentResponse.builder()
+                .id(component.getId())
+                .name(component.getName())
+                .description(component.getDescription())
+                .creator(
+                        Creator.builder()
+                        .id(component.getUser().getId())
+                        .username(component.getUser().getUsername())
+                        .build()
+                )
+                .categories(
+                        component.getCategories().stream()
                         .map(categoryMapper::toResponse)
-                        .collect(Collectors.toSet()),
-                Collections.emptyList(),
-                component.getCreatedAt(),
-                component.getUpdatedAt(),
-                countVotes(component, UserComponentVote.VoteType.UPVOTE),
-                countVotes(component, UserComponentVote.VoteType.DOWNVOTE)
-        );
+                        .collect(Collectors.toSet())
+                )
+                .createdAt(component.getCreatedAt())
+                .updatedAt(component.getUpdatedAt())
+                .upVotes(countVotes(component,VoteType.UPVOTE))
+                .downVotes(countVotes(component,VoteType.DOWNVOTE))
+                .build();
     }
     public ComponentResponse toResponse(Component component, CategoryMapper categoryMapper, ComponentFileMapper fileMapper) {
-        return new ComponentResponse(
-                component.getName(),
-                component.getDescription(),
-                component.getCategories().stream()
-                        .map(categoryMapper::toResponse)
-                        .collect(Collectors.toSet()),
-                component.getFiles().stream()
-                        .map(fileMapper::toShowcase)
-                        .collect(Collectors.toList()),
-                component.getCreatedAt(),
-                component.getUpdatedAt(),
-                countVotes(component, UserComponentVote.VoteType.UPVOTE),
-                countVotes(component, UserComponentVote.VoteType.DOWNVOTE)
-                );
+        var response = toResponse(component,categoryMapper);
+        if (component.getFile() != null){
+            response.setFile(
+                    fileMapper.toSummary(component.getFile())
+            );
+        }else {
+            response.setFile(null);
+        }
+        return response;
     }
 
-    private long countVotes(Component component, UserComponentVote.VoteType voteType) {
+    private long countVotes(Component component, VoteType voteType) {
         return component.getVotes().stream()
                 .filter(v -> v.getVoteType().equals(voteType))
                 .count();

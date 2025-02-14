@@ -2,6 +2,8 @@ package com.comphub.auth.service;
 
 import com.comphub.auth.dto.LoginRequest;
 import com.comphub.auth.dto.RegisterRequest;
+import com.comphub.auth.dto.ResendVerificationRequest;
+import com.comphub.auth.dto.VerifyEmailRequest;
 import com.comphub.auth.email.EmailService;
 import com.comphub.auth.email.EmailTemplateName;
 import com.comphub.auth.token.Token;
@@ -9,10 +11,9 @@ import com.comphub.auth.token.TokenRepository;
 import com.comphub.auth.token.TokenResponse;
 import com.comphub.auth.token.TokenService;
 
-import com.comphub.exception.EntityAlreadyExistsException;
-import com.comphub.exception.TokenExpiredException;
-import com.comphub.exception.UserAlreadyEnabledException;
-import com.comphub.exception.UserNotEnabledException;
+import com.comphub.exception.*;
+import com.comphub.role.Role;
+import com.comphub.role.RoleRepository;
 import com.comphub.user.User;
 import com.comphub.user.UserRepository;
 import jakarta.mail.MessagingException;
@@ -31,12 +32,11 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j // Todo DELETE LATER
 @Transactional
+@Slf4j
 public class AuthService {
 
     @Value("${security.verification-token.expiration}")
@@ -48,6 +48,7 @@ public class AuthService {
     @Value("${security.verification-token.length}")
     private int verificationTokenLength;
 
+    private final RoleRepository roleRepository;
     private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
@@ -60,12 +61,16 @@ public class AuthService {
             throw new EntityAlreadyExistsException("Username is already taken.");
 
         if (userRepository.existsByEmail(request.email()))
-            throw new EntityAlreadyExistsException("Email is already asociated with an account.");
+            throw new EntityAlreadyExistsException("Email is already associated with an account.");
+
+        Role role = roleRepository.findByName("USER")
+                .orElseThrow(() -> new RuntimeException("User role not found."));
 
         String verificationToken = generateVerificationToken();
 
         var user = User.builder()
                 .username(request.username())
+                .role(role)
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .enabled(false)
@@ -79,25 +84,36 @@ public class AuthService {
     }
 
     public TokenResponse login(LoginRequest request) {
-        var user = userRepository.findByEmail(request.email())
+        var user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (!user.isEnabled()){
             throw new UserNotEnabledException("User account is not enabled. Please verify your email.");
         }
 
+        if (!passwordEncoder.matches(request.password(), user.getPassword())){
+            throw new UnauthorizedAccessException("Wrong password");
+        }
+
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
-                    request.email(),
+                    request.username(),
                     request.password()
             )
         );
 
         var jwtToken = tokenService.generateToken(user);
         var refreshToken = tokenService.generateRefreshToken(user);
+
         revokeAllUserTokens(user);
-        saveUserToken(user,jwtToken);
-        return new TokenResponse(jwtToken,refreshToken);
+        saveUserToken(user,jwtToken.token());
+
+        return TokenResponse.builder()
+                .accessToken(jwtToken.token())
+                .accessTokenExpiresIn(jwtToken.expiresIn())
+                .refreshToken(refreshToken.token())
+                .refreshTokenExpiresIn(refreshToken.expiresIn())
+                .build();
     }
 
 
@@ -106,9 +122,10 @@ public class AuthService {
         User user = userRepository.findByVerificationToken(verificationToken)
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid token"));
 
-        if (!Instant.now().isBefore(user.getVerificationTokenExpiresAt())){
+        if (Instant.now().isAfter(user.getVerificationTokenExpiresAt())) {
             throw new TokenExpiredException("The verification token has expired");
         }
+
 
         user.setEnabled(true);
         user.setVerificationToken(null);
@@ -116,10 +133,10 @@ public class AuthService {
         userRepository.save(user);
     }
     
-    public void resendVerificationEmail(String email) throws MessagingException {
+    public void resendVerificationEmail(ResendVerificationRequest request) throws MessagingException {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("User with email '" + email + "' not found"));
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new EntityNotFoundException("User with email '" + request.email() + "' not found"));
 
         if (user.isEnabled()){
             throw new UserAlreadyEnabledException("User is already enabled");
@@ -148,10 +165,15 @@ public class AuthService {
         if (!tokenService.isTokenValid(refreshToken,user)){
             throw new TokenExpiredException("Token has expired");
         }
-        final String accessToken = tokenService.generateToken(user);
+        final var accessToken = tokenService.generateToken(user);
         revokeAllUserTokens(user);
-        saveUserToken(user,accessToken);
-        return new TokenResponse(accessToken,refreshToken);
+        saveUserToken(user,accessToken.token());
+
+        return TokenResponse.builder()
+                .accessToken(accessToken.token())
+                .accessTokenExpiresIn(accessToken.expiresIn())
+                .refreshToken(refreshToken)
+                .build();
     }
 
 
@@ -181,7 +203,7 @@ public class AuthService {
     }
 
     private void sendVerificationEmail(User user, String verificationToken) throws MessagingException {
-        log.info("Verification code -> {}{}", activationUrl, verificationToken);
+        log.info("Verification token {}", verificationToken);
         emailService.sendEmail(
                 user.getEmail(),
                 user.getUsername(),

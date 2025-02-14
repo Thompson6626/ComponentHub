@@ -3,13 +3,14 @@ package com.comphub.auth.controller;
 
 import com.comphub.auth.dto.LoginRequest;
 import com.comphub.auth.dto.RegisterRequest;
+import com.comphub.auth.dto.ResendVerificationRequest;
 import com.comphub.auth.token.TokenResponse;
 import com.comphub.auth.service.AuthService;
 import com.comphub.common.SimpleResponse;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthenticationController {
 
     private final AuthService authService;
@@ -28,16 +30,16 @@ public class AuthenticationController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SimpleResponse("Verification email has been sent"));
     }
-    @GetMapping("/verify-email")
+    @PostMapping("/verify-email")
     public ResponseEntity<SimpleResponse> verify(@RequestParam("token") String verificationToken){
         authService.verify(verificationToken);
         return ResponseEntity.ok(new SimpleResponse("User verified successfully"));
     }
-    @GetMapping("/resend-verification")
+    @PostMapping("/resend-verification")
     public ResponseEntity<SimpleResponse> resendVerification(
-            @RequestParam("email") @Email(message = "Email must be valid") String email
+            @Valid @RequestBody ResendVerificationRequest request
     ) throws MessagingException {
-        authService.resendVerificationEmail(email);
+        authService.resendVerificationEmail(request);
         return ResponseEntity.ok(new SimpleResponse("Verification email has been sent"));
     }
     @PostMapping("/login")

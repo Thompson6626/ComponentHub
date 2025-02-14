@@ -1,6 +1,7 @@
 package com.comphub.utils;
 
 import com.comphub.common.PageResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

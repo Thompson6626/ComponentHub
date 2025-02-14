@@ -4,13 +4,14 @@ import com.comphub.common.PageResponse;
 import com.comphub.component.category.Category;
 import com.comphub.component.category.CategoryMapper;
 import com.comphub.component.category.CategoryRepository;
-import com.comphub.component.componentFile.ComponentFile;
 import com.comphub.component.componentFile.ComponentFileMapper;
+import com.comphub.component.dto.ComponentQueryParams;
 import com.comphub.component.dto.ComponentRequest;
 import com.comphub.component.dto.ComponentResponse;
 import com.comphub.component.dto.ComponentShowcase;
 import com.comphub.component.userComponentVote.UserComponentVote;
 import com.comphub.component.userComponentVote.UserComponentVoteRepository;
+import com.comphub.component.userComponentVote.VoteRequest;
 import com.comphub.exception.InvalidInputParametersException;
 import com.comphub.exception.UnauthorizedAccessException;
 import com.comphub.user.User;
@@ -19,7 +20,6 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -42,55 +41,61 @@ public class ComponentService {
     private final ComponentFileMapper componentFileMapper;
 
     public ComponentResponse createComponent(ComponentRequest componentRequest, User user) {
-        Set<Category> categories = categoryRepository.findByIdIn(componentRequest.categoriIds());
+        Set<Category> categories = categoryRepository.findByIdIn(componentRequest.categoryIds());
         Component component = componentMapper.toEntity(componentRequest, user);
         component.setCategories(categories);
         Component savedComponent = componentRepository.save(component);
 
         return componentMapper.toResponse(savedComponent, categoryMapper);
     }
+    @Transactional(readOnly = true)
+    public PageResponse<ComponentShowcase> getAllComponents(ComponentQueryParams queryParams) {
+        Pageable pageable = PageRequest.of(queryParams.getPage(),queryParams.getSize());
+        Specification<Component> specification = ComponentSpecification.applySorting(queryParams.getSortBy(), queryParams.getOrder());
+
+        if (queryParams.getCategories() != null && !queryParams.getCategories().isEmpty()) {
+            specification = specification.and(ComponentSpecification.findByCategoryNames(queryParams.getCategories()));
+        }
+
+        Page<Component> components = componentRepository.findAll(specification, pageable);
+
+        return Utils.generatePageResponse(components, c -> componentMapper.toShowcase(c,categoryMapper));
+    }
 
     @Transactional(readOnly = true)
     public PageResponse<ComponentShowcase> getComponentsByUsername(
             int page,
-            int size,
-            String sortBy,
-            boolean descending,
-            boolean sortByUpvotes,
-            String userName
+            String query,
+            String username
     ){
-        Pageable pageable;
+        Pageable pageable = PageRequest.of(page,24);
+        Specification<Component> specification = Specification.where(ComponentSpecification.filterByUsername(username));
+        specification = specification.and(ComponentSpecification.applySorting("updatedAt","desc"));
 
-        if (Component.SortableField.isValid(sortBy)) {
-            pageable = validateAndReturnPageable(page, size, sortBy, descending);
-            Page<Component> components = componentRepository.findAllByUserUsername(userName, pageable);
-
-            return Utils.generatePageResponse(components, c -> componentMapper.toShowcase(c, categoryMapper));
+        if (query != null && !query.isBlank()) {
+            specification = specification.and(ComponentSpecification.searchByName(query));
         }
 
-        Specification<Component> specification = Specification.where(
-                ComponentSpecification.sortByVotes(sortByUpvotes)
-        );
-
-        pageable = PageRequest.of(page, size);
-
         Page<Component> components = componentRepository.findAll(specification, pageable);
-
         return Utils.generatePageResponse(components, c -> componentMapper.toShowcase(c, categoryMapper));
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ComponentShowcase> getComponentsByCategories(
-            int page,
-            int size,
-            String sortBy,
-            boolean descending,
-            Set<Long> categories
+    public PageResponse<ComponentShowcase> getComponentsByQuery(
+            ComponentQueryParams queryParams,
+            String querySearch
     ) {
-        Pageable pageable = validateAndReturnPageable(page,size,sortBy,descending);
-        Page<Component> components = componentRepository.findByCategoryIds(categories,categories.size(),pageable);
+        Pageable pageable = PageRequest.of(queryParams.getPage(),queryParams.getSize());
+        Specification<Component> specification = Specification.where(ComponentSpecification.searchByName(querySearch));
 
-        return Utils.generatePageResponse(components,c -> componentMapper.toShowcase(c,categoryMapper));
+        specification = specification.and(ComponentSpecification.applySorting(queryParams.getSortBy(),queryParams.getOrder()));
+
+        if (queryParams.getCategories() != null && !queryParams.getCategories().isEmpty()) {
+            specification = specification.and(ComponentSpecification.findByCategoryNames(queryParams.getCategories()));
+        }
+
+        Page<Component> components = componentRepository.findAll(specification, pageable);
+        return Utils.generatePageResponse(components, c -> componentMapper.toShowcase(c, categoryMapper));
     }
 
     @Transactional(readOnly = true)
@@ -101,58 +106,10 @@ public class ComponentService {
         return componentMapper.toResponse(component,categoryMapper,componentFileMapper);
     }
 
-    public ComponentResponse copyComponentToUser(Long componentId, User user) {
-
-        Component toCopy = componentRepository.findById(componentId)
-                .orElseThrow(() -> new EntityNotFoundException("Component with id " + componentId + " not found"));
-
-        Component copy = Component.builder()
-                .description(toCopy.getDescription())
-                .categories(
-                        new HashSet<>(
-                                toCopy.getCategories()
-                        )
-                )
-                .user(user)
-                .build();
-
-        copy.setFiles(
-                toCopy.getFiles().stream()
-                        .map(file -> ComponentFile.builder()
-                                .component(copy)
-                                .filename(file.getFilename())
-                                .fileContent(file.getFileContent())
-                                .size(file.getSize())
-                                .build())
-                        .collect(Collectors.toList())
-        );
-
-        Set<String> userComponentNames = new HashSet<>(
-                componentRepository.findComponentNamesByUsername(
-                        user.getUsername()
-                )
-        );
-
-        String baseName = toCopy.getName();
-        String newName = baseName;
-        int counter = 1;
-
-        while (userComponentNames.contains(newName)) {
-            newName = baseName + " (Copy " + counter + ")";
-            counter++;
-        }
-        copy.setName(newName);
-
-
-        Component savedComponent = componentRepository.save(copy);
-        return componentMapper.toResponse(savedComponent,categoryMapper,componentFileMapper);
-    }
-
     @Transactional(readOnly = true)
-    public List<String> getUserComponentNames(String userName) {
-        return new ArrayList<>(componentRepository.findComponentNamesByUsername(userName));
+    public List<String> getUserComponentNames(Long userId) {
+        return new ArrayList<>(componentRepository.findComponentNamesByUserId(userId));
     }
-
 
     public void deleteComponent(Long componentId, User user) {
         verifyComponentAccess(componentId, user);
@@ -162,14 +119,14 @@ public class ComponentService {
 
     public ComponentResponse updateComponent(Long componentId, ComponentRequest updateRequest, User user) {
         Component component = verifyComponentAccess(componentId, user);
-        Set<String> names = componentRepository.findComponentNamesByUsername(user.getUsername());
+        Set<String> names = componentRepository.findComponentNamesByUserId(user.getId());
 
         if (updateRequest.name() != null) {
             if (names.contains(updateRequest.name())) throw new InvalidInputParametersException("Component name already exists");
             component.setName(updateRequest.name());
         }
-        if (updateRequest.categoriIds() != null) {
-            component.setCategories(categoryRepository.findByIdIn(updateRequest.categoriIds()));
+        if (updateRequest.categoryIds() != null) {
+            component.setCategories(categoryRepository.findByIdIn(updateRequest.categoryIds()));
         }
         if (updateRequest.description() != null) {
             component.setDescription(updateRequest.description());
@@ -181,7 +138,7 @@ public class ComponentService {
 
     public void voteOnComponent(
             Long componentId,
-            UserComponentVote.VoteType voteType,
+            VoteRequest request,
             User user
     ) {
         Component component = componentRepository.findById(componentId)
@@ -192,17 +149,18 @@ public class ComponentService {
 
         if (existingVote.isPresent()) {
             UserComponentVote vote = existingVote.get();
-            if (vote.getVoteType() == voteType) {
-                throw new IllegalStateException("You have already " + voteType.name().toLowerCase() + "d this component");
+
+            if (vote.getVoteType() == request.voteType()) {
+                throw new IllegalStateException("You have already " + request.voteType().name().toLowerCase() + "d this component");
             }
 
             // Update the vote type
-            vote.setVoteType(voteType);
+            vote.setVoteType(request.voteType());
             componentVoteRepository.save(vote);
         } else {
             // Create a new vote
             var newVote = UserComponentVote.builder()
-                    .voteType(voteType)
+                    .voteType(request.voteType())
                     .component(component)
                     .user(user)
                     .build();
@@ -225,23 +183,15 @@ public class ComponentService {
         return componentFound;
     }
 
+
+    public ComponentResponse getComponentByUsernameAndName(String username, String componentName) {
+        Component component = componentRepository.findByUserUsernameAndName(username, componentName)
+                .orElseThrow(() -> new EntityNotFoundException("Component with name '" + componentName + "' not found for user '" + username + "'"));
+
+        return componentMapper.toResponse(component,categoryMapper,componentFileMapper);
+    }
+
     private boolean isAuthorizedUser(Component component, User user) {
         return component.getUser() != null && Objects.equals(component.getUser().getId(), user.getId());
     }
-
-    private Pageable validateAndReturnPageable(int page,int size, String sortBy, boolean descending) {
-        if (page < 0 || size < 0) {
-            throw new InvalidInputParametersException("Invalid input parameters: "
-                    + "page must be >= 0, "
-                    + "size must be >= 0, "
-                    + "sortBy must be one of the valid fields");
-        }
-        Sort sort = Sort.by(sortBy);
-
-        if(descending) sort = sort.descending();
-
-        return PageRequest.of(page, size, sort);
-    }
-
-
 }

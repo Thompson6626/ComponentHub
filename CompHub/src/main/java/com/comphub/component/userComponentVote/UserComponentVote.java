@@ -48,10 +48,5 @@ public class UserComponentVote {
     @Enumerated(EnumType.STRING)
     private VoteType voteType; // UPVOTE or DOWNVOTE
 
-    public enum VoteType {
-        UPVOTE,
-        DOWNVOTE,
-        NONE
-    }
 }
 

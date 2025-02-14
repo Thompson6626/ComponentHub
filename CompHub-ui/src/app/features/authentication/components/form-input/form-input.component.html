@@ -1,0 +1,28 @@
+<div>
+  <p-floatlabel [variant]="variant()">
+    @if (isPassword()){
+      <input
+        pInputText
+        [id]="name()"
+        [formControlName]="name()"
+        class="w-full"
+      />
+    } @else {
+      <p-password
+        [fluid]="true"
+        [id]="name()"
+        [formControlName]="name()"
+        [inputId]="name()"
+        [toggleMask]="true"
+        [feedback]="false"
+      />
+    }
+    <label [for]="name()">{{name() | titlecase}}</label>
+  </p-floatlabel>
+
+  @if (checkErrors()) {
+    <small class="text-red-500">
+      {{ checkErrors() }}
+    </small>
+  }
+</div>

@@ -2,7 +2,9 @@ package com.comphub.handler;
 
 import com.comphub.exception.*;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,30 +31,38 @@ public class GlobalExceptionHandler {
                         .build()
         );
     }
+
+
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ExceptionResponse> handleException(EntityNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(getExceptionResponse(ex));
     }
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ExceptionResponse> handleException(IllegalArgumentException ex) {
+
+
+    @ExceptionHandler({
+            IllegalArgumentException.class,
+            UserOperationException.class
+    })
+    public ResponseEntity<ExceptionResponse> handleException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(getExceptionResponse(ex));
     }
+
 
     @ExceptionHandler({
             UserNotEnabledException.class,
             UnauthorizedAccessException.class
     })
-    public ResponseEntity<ExceptionResponse> handleUserNotEnabledException(UserNotEnabledException ex) {
+    public ResponseEntity<ExceptionResponse> handleUserNotEnabledException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(getExceptionResponse(ex));
     }
-    @ExceptionHandler(TokenExpiredException.class)
-    public ResponseEntity<ExceptionResponse> handleTokenExpiredException(TokenExpiredException ex) {
+
+    @ExceptionHandler({BadCredentialsException.class,TokenExpiredException.class})
+    public ResponseEntity<ExceptionResponse> handleTokenExpiredException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(getExceptionResponse(ex));
-
     }
 
     @ExceptionHandler(EntityAlreadyExistsException.class)
@@ -61,11 +71,14 @@ public class GlobalExceptionHandler {
                 .body(getExceptionResponse(ex));
 
     }
+
+
     @ExceptionHandler(FileProcessingException.class)
     public ResponseEntity<ExceptionResponse> handleFileProcessingException(FileProcessingException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(getExceptionResponse(ex));
     }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponse> handleException(Exception exp){

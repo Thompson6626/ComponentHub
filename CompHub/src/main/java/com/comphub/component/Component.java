@@ -28,7 +28,7 @@ import java.util.Set;
                         "user_id",
                         "name"
                 }
-        ) // Ensure unique name for each user
+        )
 )
 public class Component {
 
@@ -38,7 +38,7 @@ public class Component {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id",nullable = false) // the user's foreign key
+    @JoinColumn(name = "user_id",nullable = false)
     private User user;
 
     private String name;
@@ -47,11 +47,13 @@ public class Component {
 
     @ManyToMany
     @JoinTable(
-            name = "component_category", // join table name
-            joinColumns = @JoinColumn(name = "component_id"), // foreign key to the Component table
-            inverseJoinColumns = @JoinColumn(name = "category_id") // foreign key to the Category table
+            name = "component_category",
+            joinColumns = @JoinColumn(name = "component_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     private Set<Category> categories;
+
+    private String imageUrl;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -60,13 +62,13 @@ public class Component {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToMany(
-            mappedBy = "component",
+    @OneToOne(
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    List<ComponentFile> files;
+    @JoinColumn(name = "file_id")
+    private ComponentFile file;
 
     @OneToMany(
             mappedBy = "component",
@@ -75,26 +77,5 @@ public class Component {
             fetch = FetchType.LAZY
     )
     private List<UserComponentVote> votes;
-
-    public enum SortableField {
-        NAME("name"),
-        CREATED_AT("createdAt"),
-        UPDATED_AT("updatedAt"),;
-
-        private final String field;
-
-        SortableField(String field) {
-            this.field = field;
-        }
-
-        public static boolean isValid(String field) {
-            for (SortableField sortableField : values()) {
-                if (sortableField.field.equalsIgnoreCase(field)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
 
 }

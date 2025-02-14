@@ -8,12 +8,11 @@ import {
 import {ActivatedRoute, Router} from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
-import { AuthService } from '../../services/auth.service';
-import { MessageService } from 'primeng/api';
-import { Toast } from 'primeng/toast';
-import { isRequired,hasEmailError } from '../../utils/validators';
+import { AuthService } from '../../services/Auth/auth.service';
 import { Button } from 'primeng/button';
 import { FloatLabel } from 'primeng/floatlabel';
+import {ToastService} from '../../../../core/services/Toast/toast.service';
+import { isTouchedAndHasError } from '../../../../shared/utils/form-utils';
 
 export interface FormSignIn {
   username: FormControl<string>;
@@ -27,29 +26,27 @@ export interface FormSignIn {
     ReactiveFormsModule,
     InputTextModule,
     PasswordModule,
-    Toast,
     Button,
     FloatLabel
   ],
-  providers: [MessageService],
   templateUrl: './register.component.html',
   styleUrl: './register.component.sass'
 })
-export class RegisterComponent {
+export class RegisterComponent{
 
-  private _formBuilder = inject(NonNullableFormBuilder);
-  private _authService = inject(AuthService)
-  private _messageService = inject(MessageService);
-  private _router = inject(Router)
-  private _route = inject(ActivatedRoute);
+  private formBuilder = inject(NonNullableFormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router)
+  private route = inject(ActivatedRoute);
+  private toastService = inject(ToastService);
 
-  form = this._formBuilder.group<FormSignIn>({
-    username: this._formBuilder.control('', Validators.required),
-    email: this._formBuilder.control('', [
+  form = this.formBuilder.group<FormSignIn>({
+    username: this.formBuilder.control('', Validators.required),
+    email: this.formBuilder.control('', [
       Validators.required,
       Validators.email,
     ]),
-    password: this._formBuilder.control('', Validators.required),
+    password: this.formBuilder.control('', Validators.required),
   });
 
   invalidInputs = {
@@ -57,65 +54,51 @@ export class RegisterComponent {
     emails: new Set<string>(),
   };
 
-
-  isRequired(field:'username' | 'email' | 'password') {
-    return isRequired(field, this.form);
-  }
-  hasEmailError(){
-    return hasEmailError(this.form);
-  }
-
-  async submit() {
+  async submitForm() {
     if (this.form.invalid) {
-      this.showToast('error','Form Error','Please fill out all fields correctly.')
+      this.toastService.showErrorToast('Form Error','Please fill out all fields correctly.')
       return;
     }
 
     const { username, email, password } = this.form.value;
 
-    // Optionally check for empty fields (though the form should handle this)
     if (!username || !password || !email) {
       return;
     }
 
     if (this.invalidInputs.usernames.has(username)) {
-      this.showToast('error','Validation Error',`The username "${username}" is already taken.`)
+      this.toastService.showErrorToast('Validation Error',`The username "${username}" is already taken.`)
       return;
     }
 
     if (this.invalidInputs.emails.has(email)) {
-      this.showToast('error','Validation Error',`The email "${email}" is already associated with an account.`)
+      this.toastService.showErrorToast('Validation Error',`The email "${email}" is already associated with an account.`)
       return;
     }
 
 
-      const response = this._authService.register({username, email, password});
+      const response = this.authService.register({username, email, password});
 
       response.subscribe({
-        next: async (response) => {
-          await this._router.navigate(['/email-sent'],{relativeTo: this._route, skipLocationChange: true});
+        next: async () => {
+          await this.router.navigate(['email-sent'],{relativeTo: this.route, skipLocationChange: true});
         },
         error: (httpError: any) => {
+          //  409 -> Conflict
           if (httpError.status == 409){
             if (httpError.error.message.includes('Username') && httpError.error.message.includes('taken')) this.invalidInputs.usernames.add(username);
             if (httpError.error.message.includes('Email') && httpError.error.message.includes('associated')) this.invalidInputs.emails.add(email);
           }
-          this.showToast('error', 'Error', httpError.error.message);
+          console.error(httpError)
+          if(httpError.status != 0){
+            this.toastService.showErrorToast('Error', httpError.error.message);
+          }
         }
       });
 
   }
 
-  showToast(_severity:string,_summary:string,_detail:string){
-    this._messageService.add({
-      severity: _severity,
-      summary: _summary,
-      detail: _detail,
-    })
+  isTouchedAndHasError(field: string, error:string){
+    return isTouchedAndHasError(field,this.form,error);
   }
-
-
-
-
-
 }

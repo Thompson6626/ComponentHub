@@ -18,8 +18,7 @@ public class ComponentFile {
     @Column(nullable = false)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "component_id", nullable = false)
+    @OneToOne(mappedBy = "file")
     private Component component;
 
     private String filename;
