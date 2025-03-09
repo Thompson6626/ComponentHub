@@ -2,7 +2,6 @@ package com.comphub.component.componentFile;
 
 import com.comphub.component.Component;
 import com.comphub.component.ComponentRepository;
-import com.comphub.component.componentFile.dto.ComponentFileMetaData;
 import com.comphub.component.componentFile.dto.ComponentFileResponse;
 import com.comphub.exception.FileProcessingException;
 import com.comphub.exception.UnauthorizedAccessException;
@@ -42,8 +41,8 @@ public class ComponentFileService {
             throw new UnauthorizedAccessException("You do not have permission to upload files to this component. Please ensure you have the necessary rights.");
         }
 
-        try{
-            ComponentFile componentFile = componentFileMapper.toEntity(file,component);
+        try {
+            ComponentFile componentFile = componentFileMapper.toEntity(file, component);
 
             component.setFile(componentFile);
 
@@ -51,7 +50,7 @@ public class ComponentFileService {
             ComponentFile savedFile = componentFileRepository.save(componentFile);
 
             return componentFileMapper.toResponse(savedFile);
-        }catch (IOException e){
+        } catch (IOException e) {
             throw new FileProcessingException("Failed to process the file: " + file.getOriginalFilename(), e);
         }
     }
@@ -79,7 +78,7 @@ public class ComponentFileService {
 
     public ComponentFileResponse updateFile(MultipartFile file, Long fileId, User user) {
         ComponentFile fileFound = componentFileRepository.findById(fileId)
-        .orElseThrow(() -> new EntityNotFoundException("ComponentFile with id " + fileId + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("ComponentFile with id " + fileId + " not found"));
 
         if (!Objects.equals(fileFound.getComponent().getUser().getId(), user.getId())) {
             throw new UnauthorizedAccessException("You do not have permission to update this file.");

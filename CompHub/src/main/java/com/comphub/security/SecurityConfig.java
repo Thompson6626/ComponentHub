@@ -28,8 +28,8 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     private static final String[] WHITE_LIST = {
-        // Authentication
-        "/auth/**",
+            // Authentication
+            "/auth/**",
     };
 
     private static final String[] GET_PUBLIC_ENDPOINTS = {
@@ -66,11 +66,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
-                        .requestMatchers(GET,GET_PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(POST,"/components").authenticated()
+                        .requestMatchers(GET, GET_PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(POST, "/components").authenticated()
                         .requestMatchers(AUTHENTICATED_ENDPOINTS).authenticated()
-                        .requestMatchers(POST,"/components/category").hasAnyRole("ADMIN" , "SUPER_ADMIN")
-                        .requestMatchers(DELETE, "/components/{categoryId}").hasAnyRole("ADMIN" , "SUPER_ADMIN")
+                        .requestMatchers(POST, "/components/category").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(DELETE, "/components/{categoryId}").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)

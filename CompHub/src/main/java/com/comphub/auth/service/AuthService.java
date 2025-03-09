@@ -3,14 +3,12 @@ package com.comphub.auth.service;
 import com.comphub.auth.dto.LoginRequest;
 import com.comphub.auth.dto.RegisterRequest;
 import com.comphub.auth.dto.ResendVerificationRequest;
-import com.comphub.auth.dto.VerifyEmailRequest;
 import com.comphub.auth.email.EmailService;
 import com.comphub.auth.email.EmailTemplateName;
 import com.comphub.auth.token.Token;
 import com.comphub.auth.token.TokenRepository;
 import com.comphub.auth.token.TokenResponse;
 import com.comphub.auth.token.TokenService;
-
 import com.comphub.exception.*;
 import com.comphub.role.Role;
 import com.comphub.role.RoleRepository;
@@ -80,33 +78,33 @@ public class AuthService {
 
         var savedUser = userRepository.save(user);
 
-        sendVerificationEmail(savedUser,verificationToken);
+        sendVerificationEmail(savedUser, verificationToken);
     }
 
     public TokenResponse login(LoginRequest request) {
         var user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if (!user.isEnabled()){
+        if (!user.isEnabled()) {
             throw new UserNotEnabledException("User account is not enabled. Please verify your email.");
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())){
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new UnauthorizedAccessException("Wrong password");
         }
 
         authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                    request.username(),
-                    request.password()
-            )
+                new UsernamePasswordAuthenticationToken(
+                        request.username(),
+                        request.password()
+                )
         );
 
         var jwtToken = tokenService.generateToken(user);
         var refreshToken = tokenService.generateRefreshToken(user);
 
         revokeAllUserTokens(user);
-        saveUserToken(user,jwtToken.token());
+        saveUserToken(user, jwtToken.token());
 
         return TokenResponse.builder()
                 .accessToken(jwtToken.token())
@@ -132,42 +130,42 @@ public class AuthService {
         user.setVerificationTokenExpiresAt(null);
         userRepository.save(user);
     }
-    
+
     public void resendVerificationEmail(ResendVerificationRequest request) throws MessagingException {
 
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new EntityNotFoundException("User with email '" + request.email() + "' not found"));
 
-        if (user.isEnabled()){
+        if (user.isEnabled()) {
             throw new UserAlreadyEnabledException("User is already enabled");
         }
         String verificationToken = generateVerificationToken();
         user.setVerificationToken(verificationToken);
         user.setVerificationTokenExpiresAt(Instant.now().plus(verificationExpiration, ChronoUnit.MILLIS));
         User savedUser = userRepository.save(user);
-        sendVerificationEmail(savedUser,verificationToken);
+        sendVerificationEmail(savedUser, verificationToken);
     }
 
     public TokenResponse refreshToken(final String authHeader) {
-        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new IllegalArgumentException("Invalid Bearer token");
         }
         final String refreshToken = authHeader.substring(7);
         final String userEmail = tokenService.extractUsername(refreshToken);
 
-        if(userEmail == null){
+        if (userEmail == null) {
             throw new IllegalArgumentException("Invalid Refresh email");
         }
 
         final User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if (!tokenService.isTokenValid(refreshToken,user)){
+        if (!tokenService.isTokenValid(refreshToken, user)) {
             throw new TokenExpiredException("Token has expired");
         }
         final var accessToken = tokenService.generateToken(user);
         revokeAllUserTokens(user);
-        saveUserToken(user,accessToken.token());
+        saveUserToken(user, accessToken.token());
 
         return TokenResponse.builder()
                 .accessToken(accessToken.token())
@@ -177,12 +175,10 @@ public class AuthService {
     }
 
 
-
-
-    private void revokeAllUserTokens(final User user){
+    private void revokeAllUserTokens(final User user) {
         final List<Token> validTokens = tokenRepository.findAllByExpiredIsFalseOrRevokedIsFalseAndUserId(user.getId());
-        if (!validTokens.isEmpty()){
-            for(final Token token: validTokens){
+        if (!validTokens.isEmpty()) {
+            for (final Token token : validTokens) {
                 token.setExpired(true);
                 token.setRevoked(true);
             }
@@ -193,12 +189,12 @@ public class AuthService {
     private void saveUserToken(User user, String jwtToken) {
         tokenRepository.save(
                 Token.builder()
-                .user(user)
-                .token(jwtToken)
-                .type(Token.TokenType.BEARER)
-                .expired(false)
-                .revoked(false)
-                .build()
+                        .user(user)
+                        .token(jwtToken)
+                        .type(Token.TokenType.BEARER)
+                        .expired(false)
+                        .revoked(false)
+                        .build()
         );
     }
 
@@ -214,7 +210,7 @@ public class AuthService {
         );
     }
 
-    private String generateVerificationToken(){
+    private String generateVerificationToken() {
         var token = new StringBuilder();
         var random = new SecureRandom();
         final int charsLen = CHARACTERS.length();

@@ -1,12 +1,8 @@
 package com.comphub.component.componentFile;
 
-import com.comphub.component.componentFile.dto.ComponentFileMetaData;
 import com.comphub.component.componentFile.dto.ComponentFileResponse;
 import com.comphub.user.User;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,8 +44,8 @@ public class ComponentFileController {
             @PathVariable Long fileId,
             @RequestPart("file") MultipartFile file,
             @AuthenticationPrincipal User user
-    ){
-        var response = componentFileService.updateFile(file,fileId,user);
+    ) {
+        var response = componentFileService.updateFile(file, fileId, user);
         return ResponseEntity.ok(response);
     }
 

@@ -34,7 +34,7 @@ public class LogoutHandlerImpl implements LogoutHandler {
 
         User user = foundToken.getUser();
 
-        user.getTokens().forEach(t ->{
+        user.getTokens().forEach(t -> {
             t.setRevoked(true);
             t.setExpired(true);
         });

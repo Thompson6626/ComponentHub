@@ -1,9 +1,11 @@
 package com.comphub.component;
 
 import com.comphub.component.userComponentVote.UserComponentVote;
-
 import com.comphub.component.userComponentVote.VoteType;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
@@ -58,6 +60,7 @@ public class ComponentSpecification {
             default -> throw new IllegalArgumentException("Invalid sort by: " + sortBy);
         };
     }
+
     public static Specification<Component> searchByName(String name) {
         return (root, query, criteriaBuilder) -> {
             var exactMatch = criteriaBuilder.equal(criteriaBuilder.lower(root.get("name")), name.toLowerCase());

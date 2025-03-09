@@ -7,20 +7,20 @@ import com.comphub.component.dto.ComponentResponse;
 import com.comphub.component.dto.ComponentShowcase;
 import com.comphub.component.userComponentVote.VoteRequest;
 import com.comphub.user.User;
-
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/components")
+@Slf4j
 public class ComponentController {
 
     private final ComponentService componentService;
@@ -28,7 +28,7 @@ public class ComponentController {
     @GetMapping
     public ResponseEntity<PageResponse<ComponentShowcase>> getAll(
             ComponentQueryParams queryParams
-    ){
+    ) {
         var showcase = componentService.getAllComponents(queryParams);
         return ResponseEntity.ok(showcase);
     }
@@ -41,12 +41,13 @@ public class ComponentController {
         var response = componentService.createComponent(componentRequest, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
     @GetMapping("/user/{username}/component/{componentName}")
     public ResponseEntity<ComponentResponse> getComponentByUsernameAndName(
             @PathVariable String username,
             @PathVariable String componentName
     ) {
-        var response = componentService.getComponentByUsernameAndName(username,componentName);
+        var response = componentService.getComponentByUsernameAndName(username, componentName);
         return ResponseEntity.ok(response);
     }
 
@@ -62,8 +63,8 @@ public class ComponentController {
     public ResponseEntity<PageResponse<ComponentShowcase>> searchComponent(
             ComponentQueryParams queryParams,
             @RequestParam(name = "q") String querySearch
-    ){
-        PageResponse<ComponentShowcase> showcase = componentService.getComponentsByQuery(queryParams ,querySearch);
+    ) {
+        PageResponse<ComponentShowcase> showcase = componentService.getComponentsByQuery(queryParams, querySearch);
         return ResponseEntity.ok(showcase);
     }
 
@@ -77,12 +78,15 @@ public class ComponentController {
         return ResponseEntity.ok(showcase);
     }
 
-    @GetMapping("/user/{userId}/names")
-    public ResponseEntity<List<String>> getUserComponentNames(
-            @PathVariable Long userId
+    @GetMapping("/hasComponentName")
+    public ResponseEntity<Map<String, Boolean>> hasComponentName(
+            @RequestParam(name = "name") String componentName,
+            @AuthenticationPrincipal User user
     ) {
-        return ResponseEntity.ok(componentService.getUserComponentNames(userId));
+        boolean hasName = componentService.userHasComponentName(componentName, user);
+        return ResponseEntity.ok(Map.of("hasName", hasName));
     }
+
 
     @PostMapping("/vote/{componentId}")
     public ResponseEntity<Void> voteComponent(

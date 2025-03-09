@@ -4,8 +4,8 @@ package com.comphub.auth.controller;
 import com.comphub.auth.dto.LoginRequest;
 import com.comphub.auth.dto.RegisterRequest;
 import com.comphub.auth.dto.ResendVerificationRequest;
-import com.comphub.auth.token.TokenResponse;
 import com.comphub.auth.service.AuthService;
+import com.comphub.auth.token.TokenResponse;
 import com.comphub.common.SimpleResponse;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -30,11 +30,13 @@ public class AuthenticationController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SimpleResponse("Verification email has been sent"));
     }
+
     @PostMapping("/verify-email")
-    public ResponseEntity<SimpleResponse> verify(@RequestParam("token") String verificationToken){
+    public ResponseEntity<SimpleResponse> verify(@RequestParam("token") String verificationToken) {
         authService.verify(verificationToken);
         return ResponseEntity.ok(new SimpleResponse("User verified successfully"));
     }
+
     @PostMapping("/resend-verification")
     public ResponseEntity<SimpleResponse> resendVerification(
             @Valid @RequestBody ResendVerificationRequest request
@@ -42,15 +44,17 @@ public class AuthenticationController {
         authService.resendVerificationEmail(request);
         return ResponseEntity.ok(new SimpleResponse("Verification email has been sent"));
     }
+
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody final LoginRequest request){
+    public ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody final LoginRequest request) {
         final var token = authService.login(request);
         return ResponseEntity.ok(token);
     }
+
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refreshToken(
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authHeader
-    ){
+    ) {
         return ResponseEntity.ok(authService.refreshToken(authHeader));
     }
 

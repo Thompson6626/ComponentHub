@@ -17,13 +17,12 @@ import com.comphub.exception.UnauthorizedAccessException;
 import com.comphub.user.User;
 import com.comphub.utils.Utils;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
-import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -48,9 +47,10 @@ public class ComponentService {
 
         return componentMapper.toResponse(savedComponent, categoryMapper);
     }
+
     @Transactional(readOnly = true)
     public PageResponse<ComponentShowcase> getAllComponents(ComponentQueryParams queryParams) {
-        Pageable pageable = PageRequest.of(queryParams.getPage(),queryParams.getSize());
+        Pageable pageable = PageRequest.of(queryParams.getPage(), queryParams.getSize());
         Specification<Component> specification = ComponentSpecification.applySorting(queryParams.getSortBy(), queryParams.getOrder());
 
         if (queryParams.getCategories() != null && !queryParams.getCategories().isEmpty()) {
@@ -59,7 +59,7 @@ public class ComponentService {
 
         Page<Component> components = componentRepository.findAll(specification, pageable);
 
-        return Utils.generatePageResponse(components, c -> componentMapper.toShowcase(c,categoryMapper));
+        return Utils.generatePageResponse(components, c -> componentMapper.toShowcase(c, categoryMapper));
     }
 
     @Transactional(readOnly = true)
@@ -67,10 +67,10 @@ public class ComponentService {
             int page,
             String query,
             String username
-    ){
-        Pageable pageable = PageRequest.of(page,24);
+    ) {
+        Pageable pageable = PageRequest.of(page, 24);
         Specification<Component> specification = Specification.where(ComponentSpecification.filterByUsername(username));
-        specification = specification.and(ComponentSpecification.applySorting("updatedAt","desc"));
+        specification = specification.and(ComponentSpecification.applySorting("updatedAt", "desc"));
 
         if (query != null && !query.isBlank()) {
             specification = specification.and(ComponentSpecification.searchByName(query));
@@ -85,10 +85,10 @@ public class ComponentService {
             ComponentQueryParams queryParams,
             String querySearch
     ) {
-        Pageable pageable = PageRequest.of(queryParams.getPage(),queryParams.getSize());
+        Pageable pageable = PageRequest.of(queryParams.getPage(), queryParams.getSize());
         Specification<Component> specification = Specification.where(ComponentSpecification.searchByName(querySearch));
 
-        specification = specification.and(ComponentSpecification.applySorting(queryParams.getSortBy(),queryParams.getOrder()));
+        specification = specification.and(ComponentSpecification.applySorting(queryParams.getSortBy(), queryParams.getOrder()));
 
         if (queryParams.getCategories() != null && !queryParams.getCategories().isEmpty()) {
             specification = specification.and(ComponentSpecification.findByCategoryNames(queryParams.getCategories()));
@@ -103,7 +103,7 @@ public class ComponentService {
         Component component = componentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Component with id " + id + " not found"));
 
-        return componentMapper.toResponse(component,categoryMapper,componentFileMapper);
+        return componentMapper.toResponse(component, categoryMapper, componentFileMapper);
     }
 
     @Transactional(readOnly = true)
@@ -122,7 +122,8 @@ public class ComponentService {
         Set<String> names = componentRepository.findComponentNamesByUserId(user.getId());
 
         if (updateRequest.name() != null) {
-            if (names.contains(updateRequest.name())) throw new InvalidInputParametersException("Component name already exists");
+            if (names.contains(updateRequest.name()))
+                throw new InvalidInputParametersException("Component name already exists");
             component.setName(updateRequest.name());
         }
         if (updateRequest.categoryIds() != null) {
@@ -133,7 +134,7 @@ public class ComponentService {
         }
         Component savedComponent = componentRepository.save(component);
 
-        return componentMapper.toResponse(savedComponent,categoryMapper,componentFileMapper);
+        return componentMapper.toResponse(savedComponent, categoryMapper, componentFileMapper);
     }
 
     public void voteOnComponent(
@@ -177,7 +178,7 @@ public class ComponentService {
         Component componentFound = componentRepository.findById(componentId)
                 .orElseThrow(() -> new EntityNotFoundException("Component with id " + componentId + " was not found"));
 
-        if(!isAuthorizedUser(componentFound,user)) {
+        if (!isAuthorizedUser(componentFound, user)) {
             throw new UnauthorizedAccessException("You do not have permission to delete this component. Please ensure you have the necessary rights.");
         }
         return componentFound;
@@ -188,10 +189,15 @@ public class ComponentService {
         Component component = componentRepository.findByUserUsernameAndName(username, componentName)
                 .orElseThrow(() -> new EntityNotFoundException("Component with name '" + componentName + "' not found for user '" + username + "'"));
 
-        return componentMapper.toResponse(component,categoryMapper,componentFileMapper);
+        return componentMapper.toResponse(component, categoryMapper, componentFileMapper);
     }
 
     private boolean isAuthorizedUser(Component component, User user) {
         return component.getUser() != null && Objects.equals(component.getUser().getId(), user.getId());
+    }
+
+    public boolean userHasComponentName(String componentName, User user) {
+        Set<String> userComponentNames = componentRepository.findComponentNamesByUserId(user.getId());
+        return userComponentNames.contains(componentName);
     }
 }

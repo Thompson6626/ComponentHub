@@ -8,7 +8,6 @@ import com.comphub.component.dto.ComponentShowcase;
 import com.comphub.component.dto.Creator;
 import com.comphub.component.userComponentVote.VoteType;
 import com.comphub.user.User;
-
 import org.springframework.stereotype.Service;
 
 import java.util.stream.Collectors;
@@ -16,7 +15,7 @@ import java.util.stream.Collectors;
 @Service
 public class ComponentMapper {
 
-    public Component toEntity(ComponentRequest request, User user){
+    public Component toEntity(ComponentRequest request, User user) {
         return Component.builder()
                 .user(user)
                 .name(request.name())
@@ -24,7 +23,7 @@ public class ComponentMapper {
                 .build();
     }
 
-    public ComponentShowcase toShowcase(Component component, CategoryMapper mapper){
+    public ComponentShowcase toShowcase(Component component, CategoryMapper mapper) {
         final var owner = component.getUser();
         return ComponentShowcase.builder()
                 .id(component.getId())
@@ -35,8 +34,8 @@ public class ComponentMapper {
                         .build())
                 .categories(
                         component.getCategories().stream()
-                        .map(mapper::toShowCase)
-                        .collect(Collectors.toSet())
+                                .map(mapper::toShowCase)
+                                .collect(Collectors.toSet())
                 )
                 .createdAt(component.getCreatedAt().toLocalDate())
                 .updatedAt(component.getUpdatedAt().toLocalDate())
@@ -44,43 +43,47 @@ public class ComponentMapper {
                 .build();
     }
 
-    public ComponentResponse toResponse(Component component,CategoryMapper categoryMapper){
+    public ComponentResponse toResponse(Component component, CategoryMapper categoryMapper) {
         return ComponentResponse.builder()
                 .id(component.getId())
                 .name(component.getName())
                 .description(component.getDescription())
                 .creator(
                         Creator.builder()
-                        .id(component.getUser().getId())
-                        .username(component.getUser().getUsername())
-                        .build()
+                                .id(component.getUser().getId())
+                                .username(component.getUser().getUsername())
+                                .build()
                 )
                 .categories(
                         component.getCategories().stream()
-                        .map(categoryMapper::toResponse)
-                        .collect(Collectors.toSet())
+                                .map(categoryMapper::toResponse)
+                                .collect(Collectors.toSet())
                 )
                 .createdAt(component.getCreatedAt())
                 .updatedAt(component.getUpdatedAt())
-                .upVotes(countVotes(component,VoteType.UPVOTE))
-                .downVotes(countVotes(component,VoteType.DOWNVOTE))
+                .upVotes(countVotes(component, VoteType.UPVOTE))
+                .downVotes(countVotes(component, VoteType.DOWNVOTE))
                 .build();
     }
+
     public ComponentResponse toResponse(Component component, CategoryMapper categoryMapper, ComponentFileMapper fileMapper) {
-        var response = toResponse(component,categoryMapper);
-        if (component.getFile() != null){
+        var response = toResponse(component, categoryMapper);
+        if (component.getFile() != null) {
             response.setFile(
                     fileMapper.toSummary(component.getFile())
             );
-        }else {
+        } else {
             response.setFile(null);
         }
         return response;
     }
 
     private long countVotes(Component component, VoteType voteType) {
-        return component.getVotes().stream()
-                .filter(v -> v.getVoteType().equals(voteType))
-                .count();
+        if (component.getVotes() != null) {
+            return component.getVotes().stream()
+                    .filter(v -> v.getVoteType().equals(voteType))
+                    .count();
+        }
+        return 0;
     }
 }

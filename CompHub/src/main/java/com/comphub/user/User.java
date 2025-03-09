@@ -2,9 +2,8 @@ package com.comphub.user;
 
 import com.comphub.auth.token.Token;
 import com.comphub.component.Component;
-import com.comphub.role.Role;
 import com.comphub.component.userComponentVote.UserComponentVote;
-
+import com.comphub.role.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -38,7 +37,7 @@ public class User implements UserDetails {
 
     private String profilePictureUrl;
 
-    @Column(name = "verification_code",unique = true, length = 50)
+    @Column(name = "verification_code", unique = true, length = 50)
     private String verificationToken;
     @Column(name = "verification_expiration")
     private Instant verificationTokenExpiresAt;
@@ -58,7 +57,7 @@ public class User implements UserDetails {
     private List<Token> tokens;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id",nullable = false)
+    @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)

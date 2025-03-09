@@ -3,9 +3,8 @@ package com.comphub.component;
 
 import com.comphub.component.category.Category;
 import com.comphub.component.componentFile.ComponentFile;
-import com.comphub.user.User;
 import com.comphub.component.userComponentVote.UserComponentVote;
-
+import com.comphub.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -38,7 +37,7 @@ public class Component {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id",nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     private String name;

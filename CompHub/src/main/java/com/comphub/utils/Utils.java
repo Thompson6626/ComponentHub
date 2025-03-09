@@ -1,7 +1,6 @@
 package com.comphub.utils;
 
 import com.comphub.common.PageResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -13,7 +12,7 @@ public class Utils {
     public static <T, R> PageResponse<R> generatePageResponse(
             Page<T> page,
             Function<T, R> mapper
-    ){
+    ) {
         List<R> mapped = page.stream()
                 .map(mapper)
                 .collect(Collectors.toList());

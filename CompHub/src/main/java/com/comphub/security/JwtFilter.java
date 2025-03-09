@@ -4,14 +4,13 @@ package com.comphub.security;
 import com.comphub.auth.token.Token;
 import com.comphub.auth.token.TokenRepository;
 import com.comphub.auth.token.TokenService;
-import com.comphub.user.UserRepository;
 import com.comphub.user.User;
+import com.comphub.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,7 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
 
-        if (request.getServletPath().contains("/auth")){
+        if (request.getServletPath().contains("/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -63,19 +62,19 @@ public class JwtFilter extends OncePerRequestFilter {
         final Token token = tokenRepository.findByToken(jwtToken)
                 .orElse(null);
 
-        if(token == null || token.isExpired() || token.isRevoked()){
+        if (token == null || token.isExpired() || token.isRevoked()) {
             filterChain.doFilter(request, response);
             return;
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         final Optional<User> user = userRepository.findByUsername(username);
-        if (user.isEmpty()){
+        if (user.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
-        final boolean isTokenValid = tokenService.isTokenValid(jwtToken,user.get());
-        if (!isTokenValid){
+        final boolean isTokenValid = tokenService.isTokenValid(jwtToken, user.get());
+        if (!isTokenValid) {
             return;
         }
 

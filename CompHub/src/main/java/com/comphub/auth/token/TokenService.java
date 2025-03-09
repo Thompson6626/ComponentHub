@@ -48,13 +48,13 @@ public class TokenService {
 
         return new TokenWrapper(
                 Jwts
-                .builder()
-                .claims(Map.of("email", user.getEmail()))
-                .subject(user.getUsername())
-                .issuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))
-                .expiration(Date.from(expiresAt.atZone(ZoneId.systemDefault()).toInstant()))
-                .signWith(getSignInKey())
-                .compact(),
+                        .builder()
+                        .claims(Map.of("email", user.getEmail()))
+                        .subject(user.getUsername())
+                        .issuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))
+                        .expiration(Date.from(expiresAt.atZone(ZoneId.systemDefault()).toInstant()))
+                        .signWith(getSignInKey())
+                        .compact(),
                 expiresAt
         );
     }

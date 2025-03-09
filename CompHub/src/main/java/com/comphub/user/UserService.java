@@ -26,8 +26,8 @@ public class UserService {
             throw new UserOperationException("The new password cannot be the same as the old password.");
         }
 
-        if (!request.confirmNewPassword().equals(request.newPassword())){
-            throw  new BadCredentialsException("Passwords do not match.");
+        if (!request.confirmNewPassword().equals(request.newPassword())) {
+            throw new BadCredentialsException("Passwords do not match.");
         }
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
@@ -37,11 +37,11 @@ public class UserService {
 
 
     public void changeUsername(UpdateUsernameRequest request, User user) {
-        if(userRepository.existsByUsername(request.newUsername())){
+        if (userRepository.existsByUsername(request.newUsername())) {
             throw new UserOperationException("The new username cannot be the same as the current username.");
         }
 
-        if(user.getUsername().equals(request.newUsername())){
+        if (user.getUsername().equals(request.newUsername())) {
             throw new UserOperationException("The username '" + request.newUsername() + "' is already taken.");
         }
 
@@ -58,5 +58,13 @@ public class UserService {
 
     public UserDetails getUserDetails(User user) {
         return userMapper.toDetails(user);
+    }
+
+    public boolean isUsernameAvailable(String username) {
+        return !userRepository.existsByUsername(username);
+    }
+
+    public boolean isEmailAvailable(String email) {
+        return !userRepository.existsByEmail(email);
     }
 }

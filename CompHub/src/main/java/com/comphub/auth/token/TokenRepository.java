@@ -10,14 +10,15 @@ import java.util.Optional;
 
 public interface TokenRepository extends JpaRepository<Token, Long> {
     List<Token> findAllByExpiredIsFalseOrRevokedIsFalseAndUserId(Long id);
+
     Optional<Token> findByToken(String token);
 
     @Transactional
     @Modifying
     @Query("""
-        DELETE FROM tokens t
-        WHERE t.revoked = true
-        OR t.expired = true
-""")
+                    DELETE FROM tokens t
+                    WHERE t.revoked = true
+                    OR t.expired = true
+            """)
     int deleteAllByExpiredIsTrueOrRevokedIsTrue();
 }

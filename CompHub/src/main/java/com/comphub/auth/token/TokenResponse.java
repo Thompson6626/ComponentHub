@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @ToString
-public class TokenResponse{
+public class TokenResponse {
     @JsonProperty("access_token")
     private String accessToken;
 

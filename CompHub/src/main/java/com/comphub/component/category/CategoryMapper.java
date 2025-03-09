@@ -15,7 +15,8 @@ public class CategoryMapper {
                 .description(category.getDescription())
                 .build();
     }
-    public CategoryDto toShowCase(Category category){
+
+    public CategoryDto toShowCase(Category category) {
         return CategoryDto.builder()
                 .id(category.getId())
                 .name(category.getName())

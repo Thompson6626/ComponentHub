@@ -21,5 +21,4 @@ public class ComponentQueryParams {
     private Set<String> categories = new HashSet<>();
 
 
-
 }

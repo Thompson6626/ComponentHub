@@ -9,8 +9,8 @@ import lombok.*;
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class CategoryDto{
-        Long id;
-        String name;
-        String description;
+public class CategoryDto {
+    Long id;
+    String name;
+    String description;
 }

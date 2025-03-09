@@ -21,7 +21,7 @@ public class Token {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(unique = true,length = 500)
+    @Column(unique = true, length = 500)
     public String token;
 
     @Enumerated(EnumType.STRING)
@@ -33,7 +33,6 @@ public class Token {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     public User user;
-
 
 
 }

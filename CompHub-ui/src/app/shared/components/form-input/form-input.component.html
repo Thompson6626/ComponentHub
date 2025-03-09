@@ -1,0 +1,29 @@
+<div class="mb-4">
+  <p-floatlabel [variant]="variant()">
+      @if (controlName() === 'password'){
+        <p-password
+          [fluid]="true"
+          [id]="controlName()"
+          [formControlName]="controlName()"
+          [inputId]="controlName()"
+          [toggleMask]="true"
+          [feedback]="false"
+        />
+      } @else {
+        <input
+          pInputText
+          type="text"
+          [id]="controlName()"
+          [formControlName]="controlName()"
+          [fluid]="true"
+        />
+      }
+      <label [for]="controlName()">{{ controlName() | camelCaseToSepareted | titlecase }}</label>
+    </p-floatlabel>
+    @if (getFirstError(controlName())){
+        <small class="text-red-500">
+          {{ getFirstError(controlName()) }}
+        </small>
+    }
+</div>
+

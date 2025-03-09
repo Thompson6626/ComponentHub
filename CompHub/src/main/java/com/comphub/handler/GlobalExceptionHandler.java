@@ -2,7 +2,7 @@ package com.comphub.handler;
 
 import com.comphub.exception.*;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.ObjectError;
@@ -10,23 +10,21 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import org.springframework.http.HttpStatus;
-
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ExceptionResponse> handleException(MethodArgumentNotValidException exp){
+    public ResponseEntity<ExceptionResponse> handleException(MethodArgumentNotValidException exp) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ExceptionResponse.builder()
                         .validationErrors(
                                 exp.getBindingResult()
-                                .getAllErrors()
-                                .stream()
-                                .map(ObjectError::getDefaultMessage)
-                                .collect(Collectors.toSet())
+                                        .getAllErrors()
+                                        .stream()
+                                        .map(ObjectError::getDefaultMessage)
+                                        .collect(Collectors.toSet())
                         )
                         .build()
         );
@@ -59,7 +57,7 @@ public class GlobalExceptionHandler {
                 .body(getExceptionResponse(ex));
     }
 
-    @ExceptionHandler({BadCredentialsException.class,TokenExpiredException.class})
+    @ExceptionHandler({BadCredentialsException.class, TokenExpiredException.class})
     public ResponseEntity<ExceptionResponse> handleTokenExpiredException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(getExceptionResponse(ex));
@@ -81,7 +79,7 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ExceptionResponse> handleException(Exception exp){
+    public ResponseEntity<ExceptionResponse> handleException(Exception exp) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                 ExceptionResponse.builder()
                         .businessErrorDescription("An unexpected error occurred")
@@ -91,7 +89,7 @@ public class GlobalExceptionHandler {
     }
 
 
-    private ExceptionResponse getExceptionResponse(Exception ex){
+    private ExceptionResponse getExceptionResponse(Exception ex) {
         return ExceptionResponse.builder()
                 .message(ex.getMessage())
                 .build();
