@@ -11,3 +11,13 @@ export function replaceUrlPlaceholders(
           : placeholderWithDelimiters
     );
   }
+
+
+export function capitalize(str: string): string {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export function camelCaseToSeparated(input: string, separator: string = ' '): string {
+  return input.replace(/([A-Z])/g, `${separator}$1`).trim();
+}

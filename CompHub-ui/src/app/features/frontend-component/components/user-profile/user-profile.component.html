@@ -1,81 +1,71 @@
-
-@let userData = userData$ | async;
+@let userData = (userData$ | async)!;
 
 <div class="m-5">
   <!-- User Profile Section -->
-  @if (userData) {
-    @switch (userData.state) {
-      @case (State.Loading) {
-        <div class="text-center py-6">
-          <p-progress-spinner ariaLabel="Loading user data..." />
+  @if (userData.state === State.Loaded) {
+    <div class="p-6 bg-white rounded-lg shadow-md">
+      <div class="flex items-center space-x-4">
+        <img [src]="userData.data.profilePictureUrl" class="w-16 h-16 rounded-full" alt="User Avatar" />
+        <div>
+          <h2 class="text-2xl font-bold text-black">{{ userData.data.username }}</h2>
+          <p class="text-gray-500">Joined: {{ userData.data.joinDate | date }}</p>
         </div>
-      }
-      @case (State.Error) {
-        <div class="text-center py-6 text-red-500">
-          <p class="text-xl font-semibold">User not found.</p>
-        </div>
-      }
-      @case (State.Loaded) {
-        <div class="p-6 bg-white rounded-lg shadow-md">
-          <div class="flex items-center space-x-4">
-            <img [src]="userData.data.profilePictureUrl" class="w-16 h-16 rounded-full" alt="User Avatar" />
-            <div>
-              <h2 class="text-2xl font-bold text-black">{{ userData.data.username }}</h2>
-              <p class="text-gray-500">Joined: {{ userData.data.joinDate | date }}</p>
-            </div>
-          </div>
-        </div>
-      }
-    }
+      </div>
+    </div>
   }
+
+  @let userComponents = userComponents$ | async;
 
   <!-- User Components Section -->
   <div class="mt-6">
 
-    <!-- Mini Search Bar -->
-    <div class="mb-4 flex justify-start">
-      <p-icon-field>
-        <p-inputicon styleClass="pi pi-search" />
-        <input
-          pInputText
-          type="text"
-          [(ngModel)]="searchQuery"
-          placeholder="Search by component name"
-          class="w-72"
-          (keydown.enter)="updateUrl()"
-        >
-      </p-icon-field>
-    </div>
-    @let componentsData = userComponents$ | async;
+    @if (userComponents && userComponents.state === State.Loaded && userComponents.data.size > 0){
+      <!-- Mini Search Bar -->
+      <div class="mb-4 flex justify-start">
+        <p-icon-field>
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Search by component name"
+            class="w-72"
+            (keydown.enter)="updateUrl()"
+          >
+        </p-icon-field>
+      </div>
+      <!-- Create Button -->
+      <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+              [routerLink]="['/create']">
+        <i class="pi pi-plus mr-2"></i> New Component
+      </button>
+    }
+
     <p-confirmdialog />
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      @if (componentsData) {
-        @switch (componentsData.state) {
-          @case (State.Loading) {
-            <div class="col-span-4 text-center py-6">
-              <p-progress-spinner ariaLabel="Loading components..." />
-            </div>
-          }@case (State.Error) {
-            <div class="col-span-4 text-center py-6 text-red-500">
-              <p class="text-xl font-semibold">Failed to load components.</p>
-            </div>
-          }@case (State.Loaded) {
+      @if (userComponents && userComponents.state === State.Loaded) {
             <!-- Filter Components by Search Query -->
-            @for (component of componentsData.data.content; track component.id) {
+            @for (component of userComponents.data.content; track component.id) {
               <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col h-[450px] overflow-hidden">
                 <!-- Title -->
                 <h3 class="text-xl font-semibold text-gray-900 cursor-pointer"
                     [routerLink]="['/user', profileUsername, 'component', component.name]">
                   {{ component.name }}
                 </h3>
-                <img
-                  [src]="component.imageUrl"
-                  class="w-full h-40 object-cover rounded-md mt-2 text-blue-600"
-                  alt="Component Image"
-                />
+                @if (component.imageUrl) {
+                  <img
+                    [ngSrc]="component.imageUrl"
+                    class="w-full h-40 object-cover rounded-md mt-2 text-blue-600"
+                    alt="Component Image"
+                    fill
+                  />
+                } @else {
+                  <span class="text-gray-500 text-sm">No Image Available</span>
+                }
+
 
                 <!-- Description -->
-                <div class="flex-grow mt-2 h-[200px] overflow-hidden">
+                <div class="flex-grow mt-2 h-[200px]">
                   <p class="text-gray-600 truncate">{{ component.description }}</p>
                 </div>
 
@@ -101,24 +91,40 @@
               </div>
             }
 
-          }
-
-        }
-
       }
     </div>
+
     <!-- Pagination (Centered) -->
-    <div class="flex justify-center py-8">
-      <p-paginator
-        (onPageChange)="onPageChange($event)"
-        [first]="first"
-        [rows]="size"
-        [totalRecords]="totalItems"
-        pageLinkSize="10"
-        showCurrentPageReport="true"
-        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} results"
-      />
-    </div>
+    @if (userComponents && userComponents.state === State.Loaded && userComponents.data.size > 0){
+      <div class="flex justify-center py-8">
+        <p-paginator
+          (onPageChange)="onPageChange($event)"
+          [first]="first"
+          [rows]="size"
+          [totalRecords]="totalItems"
+          pageLinkSize="10"
+          showCurrentPageReport="true"
+          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} results"
+        />
+      </div>
+
+    }
+
   </div>
 </div>
+
+@switch (userData.state) {
+  @case (State.Loading) {
+    <div class="text-center flex items-center justify-center h-screen">
+      <p-progress-spinner ariaLabel="Loading user data..." />
+    </div>
+  }
+  @case (State.Error) {
+    <div class="flex items-center justify-center h-screen">
+      <div class="text-center py-6 text-red-500">
+        <p class="text-xl font-semibold">User not found.</p>
+      </div>
+    </div>
+  }
+}
 

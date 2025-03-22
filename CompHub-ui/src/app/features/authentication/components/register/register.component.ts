@@ -10,9 +10,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { AuthService } from '../../services/Auth/auth.service';
 import { Button } from 'primeng/button';
-import { FloatLabel } from 'primeng/floatlabel';
 import {ToastService} from '../../../../core/services/Toast/toast.service';
-import { isTouchedAndHasError } from '../../../../shared/utils/form-utils';
+import {FormInputComponent} from '../../../../shared/components/form-input/form-input.component';
+import {AuthWrapperComponent} from '../auth-wrapper/auth-wrapper.component';
+import {UniqueUsernameValidator} from '../../../../shared/validators/unique-username';
+import {UniqueEmailValidator} from '../../../../shared/validators/unique-email';
 
 export interface FormSignIn {
   username: FormControl<string>;
@@ -27,7 +29,8 @@ export interface FormSignIn {
     InputTextModule,
     PasswordModule,
     Button,
-    FloatLabel
+    FormInputComponent,
+    AuthWrapperComponent
   ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.sass'
@@ -39,20 +42,23 @@ export class RegisterComponent{
   private router = inject(Router)
   private route = inject(ActivatedRoute);
   private toastService = inject(ToastService);
+  private uniqueUsernameValidator = inject(UniqueUsernameValidator);
+  private uniqueEmailValidator  = inject(UniqueEmailValidator);
 
   form = this.formBuilder.group<FormSignIn>({
-    username: this.formBuilder.control('', Validators.required),
+    username: this.formBuilder.control(
+      '',
+      Validators.required,
+      this.uniqueUsernameValidator.validate.bind(this.uniqueUsernameValidator)
+    ),
     email: this.formBuilder.control('', [
       Validators.required,
       Validators.email,
-    ]),
+    ],
+      this.uniqueEmailValidator.validate.bind(this.uniqueEmailValidator)
+    ),
     password: this.formBuilder.control('', Validators.required),
   });
-
-  invalidInputs = {
-    usernames: new Set<string>(),
-    emails: new Set<string>(),
-  };
 
   async submitForm() {
     if (this.form.invalid) {
@@ -66,17 +72,6 @@ export class RegisterComponent{
       return;
     }
 
-    if (this.invalidInputs.usernames.has(username)) {
-      this.toastService.showErrorToast('Validation Error',`The username "${username}" is already taken.`)
-      return;
-    }
-
-    if (this.invalidInputs.emails.has(email)) {
-      this.toastService.showErrorToast('Validation Error',`The email "${email}" is already associated with an account.`)
-      return;
-    }
-
-
       const response = this.authService.register({username, email, password});
 
       response.subscribe({
@@ -84,21 +79,16 @@ export class RegisterComponent{
           await this.router.navigate(['email-sent'],{relativeTo: this.route, skipLocationChange: true});
         },
         error: (httpError: any) => {
-          //  409 -> Conflict
-          if (httpError.status == 409){
-            if (httpError.error.message.includes('Username') && httpError.error.message.includes('taken')) this.invalidInputs.usernames.add(username);
-            if (httpError.error.message.includes('Email') && httpError.error.message.includes('associated')) this.invalidInputs.emails.add(email);
-          }
-          console.error(httpError)
           if(httpError.status != 0){
             this.toastService.showErrorToast('Error', httpError.error.message);
           }
         }
       });
-
   }
 
-  isTouchedAndHasError(field: string, error:string){
-    return isTouchedAndHasError(field,this.form,error);
+  getControl(name: string){
+    return this.form.get(name)! as FormControl<string>;
   }
+
+
 }

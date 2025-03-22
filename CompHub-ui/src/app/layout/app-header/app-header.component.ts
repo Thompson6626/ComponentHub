@@ -35,7 +35,13 @@ export class AppHeaderComponent implements OnInit {
       {
         label: 'Profile',
         icon: 'pi pi-user',
-        routerLink: ['/user',this.authStateService.getCurrentUserDetails()?.username],
+        command: () => {
+          const username = this.authStateService.getCurrentUserDetails()?.username;
+          if (username){
+            this.router.navigate(['/user',username]);
+          }
+        }
+
       },
       {
         label: 'Settings',
@@ -47,7 +53,6 @@ export class AppHeaderComponent implements OnInit {
         label: 'Logout',
         icon: 'pi pi-sign-out',
         command: () => {
-          console.log('Logout');
           this.authService.logout(true);
         }
       }

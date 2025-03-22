@@ -2,7 +2,7 @@ import {inject, Injectable} from '@angular/core';
 import {componentConfig} from '../../../../environments/ui-component.config';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {ComponentShowcase} from '../../models/component/component-showcase';
-import { Observable} from 'rxjs';
+import {Observable, tap} from 'rxjs';
 import {ComponentRequest} from '../../models/component/component-request';
 import {ComponentResponse} from '../../models/component/component-response';
 import { replaceUrlPlaceholders } from '../../../../shared/utils/string-utils';
@@ -28,7 +28,7 @@ export class ComponentService {
   private GET_ALL = componentConfig.getAll;
   private GET_BY_ID = componentConfig.getById;
   private GET_BY_USERNAME = componentConfig.getByUsername;
-  private GET_USER_COMP_NAMES = componentConfig.userComponentNames;
+  private ALREADY_HAS_COMPONENT_NAME = componentConfig.checkIfAlreadyHasComponentName;
   private GET_BY_USERNAME_AND_COMP_NAME = componentConfig.getByUsernameAndCompName;
 
   private CREATE = componentConfig.create;
@@ -71,16 +71,16 @@ export class ComponentService {
     return this.http.put<ComponentResponse>(modifiedUrl, request);
   }
 
-  getUserCompNames(userId: number): Observable<string[]>{
-    const modifiedUrl = replaceUrlPlaceholders(this.GET_USER_COMP_NAMES,{userId:userId.toString()});
-    return this.http.get<string[]>(modifiedUrl);
+  alreadyHasComponentName(componentName: string): Observable<{ hasName:boolean }>{
+    const params = new HttpParams().set("name",componentName);
+    return this.http.get<{ hasName:boolean }>(this.ALREADY_HAS_COMPONENT_NAME,{ params });
   }
 
   getByUsernameAndCompName(
     username:string,
     compName: string
   ): Observable<ComponentResponse>  {
-    const modifiedUrl = replaceUrlPlaceholders(this.GET_BY_USERNAME_AND_COMP_NAME,{username:username, componentName:compName});
+    const modifiedUrl = replaceUrlPlaceholders(this.GET_BY_USERNAME_AND_COMP_NAME,{ username, compName });
 
     return this.http.get<ComponentResponse>(modifiedUrl);
   }
@@ -119,6 +119,9 @@ export class ComponentService {
     const modifiedUrl = replaceUrlPlaceholders(this.VOTE,{ componentId: componentId.toString() });
     return this.http.post<void>(modifiedUrl,request);
   }
+
+
+
 
   private setValidParams(params: HttpParams, queryParams: BackendQueryParams): HttpParams {
 

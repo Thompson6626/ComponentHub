@@ -5,76 +5,84 @@
   @switch (file.state) {
     @case (State.Loaded) {
       @if (file.data) {
-        <div class="mt-6">
+        <div class="mt-6 overflow-y-auto">
           <!-- Display file content as text if content is available -->
           @if (file.data.content) {
             <div class="relative mt-4 border border-gray-300 rounded-xl shadow-lg overflow-hidden">
 
+
               <!-- Header with Toggle Buttons -->
-              <div class="flex justify-between items-center bg-gray-200 px-4 py-2 border-b border-gray-300">
-                <span class="font-semibold text-gray-700">Preview</span>
+              <div class="flex justify-end items-center bg-gray-200 px-4 py-2 border-b border-gray-300">
                 <div class="flex space-x-2">
                   <!-- Code Button -->
                   <button
-                    class="flex items-center px-3 py-1 text-sm font-medium rounded-md transition"
-                    [class.bg-blue-500]="isCodeView"
-                    [class.text-white]="isCodeView"
-                    [class.bg-gray-300]="!isCodeView"
-                    [class.text-gray-700]="!isCodeView"
+                    pButton
+                    type="button"
+                    class="px-4 py-2 text-sm font-medium rounded-md transition duration-150"
+                    [ngClass]="{
+                    'bg-blue-500 text-white': isCodeView,
+                    'bg-gray-300 text-gray-700 hover:bg-gray-400': !isCodeView
+                  }"
                     (click)="isCodeView = true"
                   >
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 18l6-6m0 0l-6-6m6 6H2"></path>
-                    </svg>
+                    <i class="pi pi-code mr-2"></i>
                     Code
                   </button>
 
                   <!-- Rendered Button -->
                   <button
-                    class="flex items-center px-3 py-1 text-sm font-medium rounded-md transition"
-                    [class.bg-blue-500]="!isCodeView"
-                    [class.text-white]="!isCodeView"
-                    [class.bg-gray-300]="isCodeView"
-                    [class.text-gray-700]="isCodeView"
+                    pButton
+                    type="button"
+                    class="px-4 py-2 text-sm font-medium rounded-md transition duration-150"
+                    [ngClass]="{
+                      'bg-blue-500 text-white': !isCodeView,
+                      'bg-gray-300 text-gray-700 hover:bg-gray-400': isCodeView
+                    }"
                     (click)="isCodeView = false"
                   >
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7"></path>
-                    </svg>
+                    <i class="pi pi-eye mr-2"></i>
                     Rendered
                   </button>
+
+                  <!-- Upload & Delete Buttons (if user owns file) -->
                   @if (isOwnUser) {
                     <app-small-upload
                       [componentId]="componentId()"
                       (onFileUploaded)="refreshFile($event)"
                       [update]="true"
-                    />
+                      class="ml-2"
+                    ></app-small-upload>
                     <button
-                      class="flex items-center px-3 py-1 text-sm font-medium text-red-600 bg-gray-300 rounded-md transition hover:bg-red-500 hover:text-white"
-                      (click)="deleteFile()"
+                      class="px-4 py-2 text-sm font-medium rounded-md transition duration-150 ml-2 bg-[#f56565] text-white"
+                      (click)="deleteFile(file.data.id)"
                     >
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
+                      <i class="pi pi-trash mr-2"></i>
                       Delete
                     </button>
                   }
-
                 </div>
               </div>
 
+
               <!-- Code View -->
               @if (isCodeView) {
-                <pre class="bg-gray-900 text-white text-sm p-4 rounded-b-xl overflow-auto transition-all">
+                <pre class="bg-gray-900 text-white text-sm p-4 rounded-b-xl overflow-auto transition-all code-theme min-h-[300px] max-h-[500px] overflow-y-auto">
                 {{ file.data.content | Base64ToText }}
-                </pre>
+              </pre>
               }
               @else {
                 <!-- Rendered View -->
-                <div class="p-4 bg-gray-50 rounded-b-xl border-t border-gray-300 transition-all">
-                  <div [innerHTML]="file.data.content | Base64ToText:true"></div>
+                <div class="p-4 bg-gray-50 rounded-b-xl border-t border-gray-300 transition-all min-h-[300px] max-h-[500px] overflow-y-auto">
+                    <!-- Added pre and code tags -->
+                    <pre>
+                      <code>
+                           <div [innerHTML]="file.data.content | Base64ToText:true"></div>
+                      </code>
+                    </pre>
+
                 </div>
               }
+
 
             </div>
           }

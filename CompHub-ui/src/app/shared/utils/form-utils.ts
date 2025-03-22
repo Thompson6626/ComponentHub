@@ -1,16 +1,37 @@
-import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn } from "@angular/forms";
+import {AbstractControl , ValidationErrors, ValidatorFn} from "@angular/forms";
 
-export function noWhitespaceValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    return  (control.value || '').trim().length ? { blank : true} : null;
+
+export function differentOldAndNewPasswordValidator(oldPasswordKey:string, newPasswordKey:string): ValidatorFn{
+  return (control: AbstractControl): ValidationErrors | null =>{
+    const oldPasswordControl = control.get(oldPasswordKey);
+    const newPasswordControl = control.get(newPasswordKey);
+
+    if (!oldPasswordControl || oldPasswordControl.value.trim() === "" || !newPasswordControl || newPasswordControl.value.trim() === "" ){
+      return null;
+    }
+
+    if(oldPasswordControl.value === newPasswordControl.value){
+      newPasswordControl.setErrors({ OldNewSame: 'New password cannot be the same as old password.'});
+    }
+
+    return null;
   };
 }
 
-export function isTouchedAndIsRequired(field: string, form: FormGroup){
-  return isTouchedAndHasError(field,form,'required');
-}
+export function samePasswordConfirmationValidator(passwordKey: string, confirmKey: string): ValidatorFn{
+  return (control: AbstractControl): ValidationErrors | null =>{
 
-export function isTouchedAndHasError(field: string, form: FormGroup, error: string){
-  const control = form.get(field);
-  return control && control.touched && control.hasError(error);
+    const passwordControl = control.get(passwordKey);
+    const confirmPasswordControl = control.get(confirmKey);
+
+    if (!passwordControl || passwordControl.value.trim() === "" || !confirmPasswordControl || confirmPasswordControl.value.trim() === "" ){
+      return null;
+    }
+
+    if (passwordControl && confirmPasswordControl && passwordControl.value !== confirmPasswordControl.value){
+      confirmPasswordControl.setErrors({ ConfirmPasswordMismatch: 'New password and confirm do not match' });
+    }
+
+    return null;
+  };
 }

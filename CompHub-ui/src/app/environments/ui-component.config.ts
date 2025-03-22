@@ -9,7 +9,7 @@ export const componentConfig = {
   search: `${baseUrl}/search`,
   getByUsername: `${baseUrl}/user/{username}`,
   getByUsernameAndCompName: `${baseUrl}/user/{username}/component/{componentName}`,
-  userComponentNames: `${baseUrl}/user/{username}/names`,
+  checkIfAlreadyHasComponentName: `${baseUrl}/hasComponentName`,
 
   // POST methods
   create: `${baseUrl}`,

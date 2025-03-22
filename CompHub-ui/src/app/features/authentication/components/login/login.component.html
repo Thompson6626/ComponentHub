@@ -1,80 +1,32 @@
-<section class="bg-gray-50 dark:bg-gray-900">
-  <div
-    class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0"
-  >
-    <div
-      class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700"
-    >
-      <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-        <h1
-          class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white text-center"
-        >
-          Login
-        </h1>
+<app-auth-wrapper title="Login">
 
-        <form [formGroup]="form" (ngSubmit)="submitForm()" class="space-y-4 md:space-y-6">
-          <!-- Email -->
-          <div>
-            <p-floatlabel variant="in">
-              <input
-                pInputText
-                id="username"
-                formControlName="username"
-                fluid="true"
-                type="text"
-              />
-              <label for="username">Username</label>
-            </p-floatlabel>
-            @if(isTouchedAndIsRequired('username')){
-              <small class="text-red-500 font-medium">
-                Username is required.
-              </small>
-            }
-          </div>
+      <form [formGroup]="form" (ngSubmit)="submitForm()" class="space-y-4 md:space-y-6">
+        <!-- Email -->
+        <app-form-input [formControl]="getControl('username')" controlName="username" ngDefaultControl/>
+        <app-form-input [formControl]="getControl('password')" controlName="password" ngDefaultControl/>
 
-          <!-- Password -->
-          <div>
-            <p-floatlabel variant="in">
-              <p-password
-                fluid="true"
-                id="password"
-                formControlName="password"
-                inputId="password"
-                [toggleMask]="true"
-                feedback="false"
-              />
-              <label for="password">Password</label>
-            </p-floatlabel>
-            @if(isTouchedAndIsRequired('password')){
-              <small class="text-red-500 font-medium">
-                Password is required.
-              </small>
-          }
-          </div>
+        <!-- Submit Button -->
+        <div>
+          <p-button
+            type="submit"
+            fluid="true"
+            styleClass="text-black w-full mt-5 hover"
+            severity="contrast"
+            [disabled]="!form.valid"
+          >
+            Login
+          </p-button>
+        </div>
 
-          <!-- Submit Button -->
-          <div>
-            <p-button
-              type="submit"
-              fluid="true"
-              styleClass="text-black w-full mt-6"
-              severity="contrast"
-            >
-              Login
-            </p-button>
-          </div>
+        <!-- Don't have an account yet? Link -->
+        <div class="text-center mt-4">
+          <p class="text-gray-600 dark:text-gray-300">
+            Don't have an account yet?
+            <a routerLink="../register" class="text-blue-400 hover:underline">
+              Register
+            </a>
+          </p>
+        </div>
+      </form>
 
-          <!-- Don't have an account yet? Link -->
-          <div class="text-center mt-4">
-            <p class="text-gray-600 dark:text-gray-300">
-              Don't have an account yet?
-              <a routerLink="../register" class="text-blue-400 hover:underline">
-                Register
-              </a>
-            </p>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</section>
+</app-auth-wrapper>

@@ -1,13 +1,12 @@
 import {Component, inject, OnInit} from '@angular/core';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {ComponentShowcase} from '../../../models/component/component-showcase';
 import {ComponentService} from '../../../services/ui-component/component.service';
 import {Paginator, PaginatorState} from 'primeng/paginator';
-import {AsyncPipe, DatePipe} from '@angular/common';
-import {Observable, tap} from 'rxjs';
-import {LoadingState, State} from '../../../../../shared/models/loading-state';
-import {ProgressSpinner} from 'primeng/progressspinner';
-import { toLoadingStateStream } from '../../../../../shared/utils/rxjs-utils';
+import {AsyncPipe} from '@angular/common';
+import {catchError, Observable, of, tap} from 'rxjs';
+import {Errored, LoadingState, State} from '../../../../../shared/models/loading-state';
+import {withLoadingState} from '../../../../../shared/utils/rxjs-utils';
 import {SearchStateService} from '../../../../../core/services/SearchState/search-state.service';
 import {PageResponse} from '../../../../../shared/models/page-response';
 import {CategoryService} from '../../../services/category/category.service';
@@ -16,19 +15,18 @@ import {Select, SelectChangeEvent} from 'primeng/select';
 import {FormsModule} from '@angular/forms';
 import {Checkbox, CheckboxChangeEvent} from 'primeng/checkbox';
 import {ComponentCardComponent} from '../component-card/component-card.component';
+import {ProgressSpinner} from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-component-list',
   imports: [
     Paginator,
-    DatePipe,
     AsyncPipe,
-    ProgressSpinner,
-    RouterLink,
     Select,
     FormsModule,
     Checkbox,
-    ComponentCardComponent
+    ComponentCardComponent,
+    ProgressSpinner
   ],
   templateUrl: './component-list.component.html',
   styleUrl: './component-list.component.sass'
@@ -43,8 +41,6 @@ export class ComponentListComponent implements OnInit {
     size: 12
   };
 
-  defaultItemsValue = { label: "Rated", value: this.defaultParams.sortBy };
-  defaultOrderValue = { label: "Descending", value: this.defaultParams.order };
 
   sortItems = [
     { label: "Rated", value: "upVotes" },
@@ -56,6 +52,10 @@ export class ComponentListComponent implements OnInit {
     { label: "Ascending", value: "asc" },
     { label: "Descending", value: "desc" },
   ];
+
+  defaultItemsValue = { label: "Rated", value: this.defaultParams.sortBy };
+  defaultOrderValue = { label: "Descending", value: this.defaultParams.order };
+
 
   componentPage$!: Observable<LoadingState<PageResponse<ComponentShowcase>>>;
   categoryList$!: Observable<LoadingState<CategoryResponse[]>>;
@@ -79,7 +79,9 @@ export class ComponentListComponent implements OnInit {
   readonly pageSizeOptions = [12, 24, 36];
 
   ngOnInit(): void {
-    this.categoryList$ = toLoadingStateStream(this.categoryService.getAll());
+    this.categoryList$ = this.categoryService.getAll().pipe(
+      withLoadingState()
+    );
 
     this.activatedRoute.queryParamMap.subscribe(queryParams => {
       this.searchQuery = queryParams.get('q') || '';
@@ -101,27 +103,30 @@ export class ComponentListComponent implements OnInit {
   }
 
   fetchComponents() {
-    this.componentPage$ = toLoadingStateStream(
-      this.componentService.search(this.searchQuery, {
+    this.componentPage$ = this.componentService.search(
+      this.searchQuery,
+      {
         page: this.page,
         size: this.size,
         sortBy: this.sortBy,
         order: this.order,
         categoryNames: this.categoryNames,
-      }).pipe(
-        tap(response => {
-          this.page = response.number;
-          this.size = response.size;
-          this.totalPages = response.totalPages;
-          this.totalItems = response.totalElements;
+      }
+    ).pipe(
+      tap(response => {
+        this.page = response.number;
+        this.size = response.size;
+        this.totalPages = response.totalPages;
+        this.totalItems = response.totalElements;
 
-          if (this.page >= response.totalPages) {
-            this.page = Math.max(0, response.totalPages - 1);
-            this.updateUrl();
-          }
-        })
-      )
+        if (this.page >= response.totalPages) {
+          this.page = Math.max(0, response.totalPages - 1);
+          this.updateUrl();
+        }
+      }),
+      withLoadingState()
     );
+
   }
 
   onPageChange(state: PaginatorState): void {

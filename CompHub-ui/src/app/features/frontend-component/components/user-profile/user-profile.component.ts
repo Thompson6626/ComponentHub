@@ -2,19 +2,19 @@ import {Component, inject, OnInit} from '@angular/core';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Observable, of, tap} from 'rxjs';
 import {LoadingState, State} from '../../../../shared/models/loading-state';
-import {toLoadingStateStream} from '../../../../shared/utils/rxjs-utils';
+import {withLoadingState} from '../../../../shared/utils/rxjs-utils';
 import {ComponentShowcase} from '../../models/component/component-showcase';
 import {ComponentService} from '../../services/ui-component/component.service';
 import {PageResponse} from '../../../../shared/models/page-response';
 import {UserService} from '../../../user/services/user.service';
 import {ToastService} from '../../../../core/services/Toast/toast.service';
 import {ConfirmationService} from 'primeng/api';
-import {AsyncPipe, DatePipe} from '@angular/common';
+import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
 import {ProgressSpinner} from 'primeng/progressspinner';
 import {AuthStateService} from '../../../../core/services/AuthState/auth-state.service';
 import {UserPublicDetails} from '../../../../shared/models/user-public-details';
 import {FormsModule} from '@angular/forms';
-import {InputText, InputTextModule} from 'primeng/inputtext';
+import {InputText} from 'primeng/inputtext';
 import {IconField} from 'primeng/iconfield';
 import {InputIcon} from 'primeng/inputicon';
 import {Paginator, PaginatorState} from 'primeng/paginator';
@@ -32,7 +32,8 @@ import {ConfirmDialog} from 'primeng/confirmdialog';
     IconField,
     InputIcon,
     Paginator,
-    ConfirmDialog
+    ConfirmDialog,
+    NgOptimizedImage
   ],
   providers: [ConfirmationService],
   templateUrl: './user-profile.component.html',
@@ -56,7 +57,7 @@ export class UserProfileComponent implements OnInit {
   protected readonly State = State;
 
   userData$!: Observable<LoadingState<UserPublicDetails>>;
-  userComponents$!: Observable<LoadingState<PageResponse<ComponentShowcase>>>;
+  userComponents$: Observable<LoadingState<PageResponse<ComponentShowcase>>> | null = null;
 
   profileUsername?: string;
   searchQuery: string = '';
@@ -97,7 +98,9 @@ export class UserProfileComponent implements OnInit {
 
   /** Fetches User Data **/
   private fetchUserData(): void {
-    this.userData$ = toLoadingStateStream(this.userService.getUserDetails(this.profileUsername!));
+    this.userData$ = this.userService.getUserDetails(this.profileUsername!)
+      .pipe(withLoadingState());
+
     this.fetchUserComponents();
   }
 
@@ -105,24 +108,23 @@ export class UserProfileComponent implements OnInit {
   private fetchUserComponents(): void {
     if (!this.profileUsername) return;
 
-    this.userComponents$ = toLoadingStateStream(
-      this.componentService.getByUsername(this.profileUsername, this.searchQuery, {
-        page: this.page,
-        size: this.size
-      }).pipe(
-        tap( response => {
-          this.page = response.number;
-          this.size = response.size;
-          this.totalPages = response.totalPages;
-          this.totalItems = response.totalElements;
+    this.userComponents$ = this.componentService.getByUsername(this.profileUsername,this.searchQuery,{
+      page: this.page,
+      size: this.size
+    }).pipe(
+      tap( response => {
+        this.page = response.number;
+        this.size = response.size;
+        this.totalPages = response.totalPages;
+        this.totalItems = response.totalElements;
 
-          if (this.page >= response.totalPages) {
-            this.page = Math.max(0, response.totalPages - 1);
-            this.updateUrl();
-          }
-          })
-      )
-    );
+        if (this.page >= response.totalPages) {
+          this.page = Math.max(0, response.totalPages - 1);
+          this.updateUrl();
+        }
+      }),
+      withLoadingState()
+    )
   }
 
   /**  Deletes a Component (With Confirmation) **/

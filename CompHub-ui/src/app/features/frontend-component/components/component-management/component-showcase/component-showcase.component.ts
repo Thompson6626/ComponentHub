@@ -1,12 +1,11 @@
 import {Component, inject, OnInit} from '@angular/core';
-import {Errored, Loaded, LoadingState, State} from '../../../../../shared/models/loading-state';
+import {Loaded, LoadingState, State} from '../../../../../shared/models/loading-state';
 import {ComponentService} from '../../../services/ui-component/component.service';
-import {ActivatedRoute} from '@angular/router';
-import {catchError, combineLatest, filter, map, Observable, of, switchMap, tap, throwError, withLatestFrom} from 'rxjs';
+import {ActivatedRoute, RouterLink} from '@angular/router';
+import {catchError, combineLatest, filter, map, Observable, of, switchMap, throwError} from 'rxjs';
 import {ComponentResponse} from '../../../models/component/component-response';
 import {AsyncPipe, DatePipe, NgClass} from '@angular/common';
 import {ProgressSpinner} from 'primeng/progressspinner';
-import {toLoadingStateStream} from '../../../../../shared/utils/rxjs-utils';
 import {VoteType} from '../../../models/vote/vote-type';
 import {FormsModule} from '@angular/forms';
 import {AuthStateService} from '../../../../../core/services/AuthState/auth-state.service';
@@ -15,19 +14,21 @@ import {ComponentFileResponse} from '../../../models/component/component-file-re
 import {FileInfoComponent} from '../../file-info/file-info.component';
 import {Chip} from 'primeng/chip';
 import {Tooltip} from 'primeng/tooltip';
+import {withLoadingState} from '../../../../../shared/utils/rxjs-utils';
 
 @Component({
   selector: 'app-component-showcase',
-  imports: [
-    AsyncPipe,
-    ProgressSpinner,
-    DatePipe,
-    FormsModule,
-    NgClass,
-    FileInfoComponent,
-    Chip,
-    Tooltip
-  ],
+    imports: [
+        AsyncPipe,
+        ProgressSpinner,
+        DatePipe,
+        FormsModule,
+        NgClass,
+        FileInfoComponent,
+        Chip,
+        Tooltip,
+        RouterLink
+    ],
   templateUrl: './component-showcase.component.html',
   styleUrl: './component-showcase.component.sass'
 })
@@ -58,7 +59,7 @@ export class ComponentShowcaseComponent implements OnInit {
     if(!username || !componentName){
       this.componentResponse$ = of({state:State.Error, error: Error("Username and component must be provided")});
     }else{
-      this.componentResponse$ = toLoadingStateStream(this.componentService.getByUsernameAndCompName(username,componentName));
+      this.componentResponse$ = this.componentService.getByUsernameAndCompName(username,componentName).pipe(withLoadingState());
 
       this.isOwnUser$ = combineLatest([
         this.componentResponse$,
@@ -75,7 +76,7 @@ export class ComponentShowcaseComponent implements OnInit {
         filter(response => response.state === State.Loaded),
         switchMap(response =>
           response.data?.file
-            ? toLoadingStateStream(this.componentFileService.getById(response.data.file.id))
+            ? this.componentFileService.getById(response.data.file.id).pipe(withLoadingState())
             : of({ state:State.Loaded, data: null} as Loaded<any>)
         )
       );

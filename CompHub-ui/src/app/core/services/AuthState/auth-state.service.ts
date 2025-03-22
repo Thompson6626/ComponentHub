@@ -30,7 +30,6 @@ export class AuthStateService {
     }
   }
 
-
   set userDetails(user: UserDetails | null) {
     this.userDetailsSubject.next(user);
   }

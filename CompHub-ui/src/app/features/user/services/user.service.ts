@@ -1,4 +1,4 @@
-import {inject, Injectable} from '@angular/core';
+import {inject, Injectable, OnInit} from '@angular/core';
 import {userConfig} from '../../../environments/user-config';
 import {HttpClient} from '@angular/common/http';
 import {UpdateUsernameRequest} from '../models/update-username-request';
@@ -13,13 +13,16 @@ import {UserPublicDetails} from '../../../shared/models/user-public-details';
 @Injectable({
   providedIn: 'root'
 })
-export class UserService {
+export class UserService{
 
   private GET_CURRENT_USER_DETAILS_URL = userConfig.currentUserDetails;
   private GET_USER_DETAILS_URL = userConfig.userDetails;
 
   private UPDATE_USERNAME_URL = userConfig.updateUsername;
   private UPDATE_PASSWORD_URL = userConfig.updatePassword;
+  private CHECK_USERNAME_EXISTS_URL = userConfig.isUsernameTaken;
+  private CHECK_EMAIL_ALREADY_ASSOCIATED_URL = userConfig.isEmailAssociated;
+
 
   private http = inject(HttpClient);
   private authStateService = inject(AuthStateService);
@@ -52,6 +55,16 @@ export class UserService {
       },
       error: (error) => console.error("Failed to fetch user details:", error)
     });
+  }
+
+  isUsernameTaken(username: string): Observable<{ available: boolean}>{
+    const modifiedUrl = replaceUrlPlaceholders(this.CHECK_USERNAME_EXISTS_URL, { username });
+    return this.http.get<{ available: boolean }>(modifiedUrl);
+  }
+
+  isEmailAssociated(email: string): Observable<{ available: boolean}>{
+    const modifiedUrl = replaceUrlPlaceholders(this.CHECK_EMAIL_ALREADY_ASSOCIATED_URL, { email });
+    return this.http.get<{ available: boolean }>(modifiedUrl);
   }
 
 }

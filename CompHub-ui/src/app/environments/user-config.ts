@@ -7,4 +7,6 @@ export const userConfig = {
     updateUsername: `${userUrl}/username`,
     currentUserDetails: `${userUrl}/me`,
     userDetails: `${userUrl}/{username}`,
+    isUsernameTaken: `${userUrl}/availability/username/{username}`,
+    isEmailAssociated: `${userUrl}/availability/email/{email}`
 }

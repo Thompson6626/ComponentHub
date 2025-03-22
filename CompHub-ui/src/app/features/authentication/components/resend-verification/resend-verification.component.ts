@@ -2,9 +2,9 @@ import {Component, inject} from '@angular/core';
 import {FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {AuthService} from '../../services/Auth/auth.service';
 import {Button} from 'primeng/button';
-import {FloatLabel} from 'primeng/floatlabel';
-import {InputText} from 'primeng/inputtext';
 import {ToastService} from '../../../../core/services/Toast/toast.service';
+import {FormInputComponent} from '../../../../shared/components/form-input/form-input.component';
+import {AuthWrapperComponent} from '../auth-wrapper/auth-wrapper.component';
 
 export interface FormSendEmail {
   email: FormControl<string>;
@@ -14,9 +14,9 @@ export interface FormSendEmail {
   selector: 'app-resend-verification',
   imports: [
     Button,
-    FloatLabel,
-    InputText,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    FormInputComponent,
+    AuthWrapperComponent
   ],
   templateUrl: './resend-verification.component.html',
   styleUrl: './resend-verification.component.sass'
@@ -50,20 +50,19 @@ export class ResendVerificationComponent{
       return;
     }
 
-    try {
-      const response = this.authService.resendVerificationEmail({email});
-      response.subscribe({
-        next: () => {
-          this.toasService.showSuccessToast('Success', 'Verification email has been sent successfully.');
-        },
-        error: (err) => {
-          console.error('Error sending email:', err);
-          this.toasService.showErrorToast('Error', 'Failed to send verification email. Please try again later.');
-        },
-      });
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      this.toasService.showErrorToast('Error', 'An unexpected error occurred. Please try again.');
-    }
+    // No try/catch needed here, error handling is done in subscribe.
+    this.authService.resendVerificationEmail({ email }).subscribe({
+      next: () => {
+        this.toasService.showSuccessToast('Success', 'Verification email has been sent successfully.');
+      },
+      error: (err) => {
+        console.error('Error sending email:', err);
+        this.toasService.showErrorToast('Error', 'Failed to send verification email. Please try again later.');
+      },
+    });
+  }
+
+  getControl(name: string){
+    return this.form.get(name)! as FormControl<string>;
   }
 }

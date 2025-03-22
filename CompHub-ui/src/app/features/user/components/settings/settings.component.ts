@@ -3,14 +3,17 @@ import {AsyncPipe, DatePipe} from "@angular/common";
 import {Button} from "primeng/button";
 import {Dialog} from "primeng/dialog";
 import {InputText} from "primeng/inputtext";
-import {Password} from "primeng/password";
 import {FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators} from "@angular/forms";
 import {UserService} from '../../services/user.service';
 import {AuthStateService} from '../../../../core/services/AuthState/auth-state.service';
 import {ToastService} from '../../../../core/services/Toast/toast.service';
-import {noWhitespaceValidator} from '../../../../shared/utils/form-utils';
-import {debounceTime, distinctUntilChanged} from 'rxjs';
 import {SimpleResponse} from '../../../../shared/models/simple-response';
+import {UniqueUsernameValidator} from '../../../../shared/validators/unique-username';
+import {
+  differentOldAndNewPasswordValidator,
+  samePasswordConfirmationValidator
+} from '../../../../shared/utils/form-utils';
+import {FormInputComponent} from '../../../../shared/components/form-input/form-input.component';
 
 interface FormChangeUsernameModel{
   newUsername: FormControl<string>;
@@ -24,19 +27,19 @@ interface FormChangePasswordModel{
 
 @Component({
   selector: 'app-settings',
-    imports: [
-        AsyncPipe,
-        Button,
-        DatePipe,
-        Dialog,
-        InputText,
-        Password,
-        ReactiveFormsModule
-    ],
+  imports: [
+    AsyncPipe,
+    Button,
+    DatePipe,
+    Dialog,
+    InputText,
+    ReactiveFormsModule,
+    FormInputComponent
+  ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.sass'
 })
-export class SettingsComponent implements OnInit{
+export class SettingsComponent{
 
   changeUsernameVisible = false;
   changePasswordVisible = false;
@@ -45,6 +48,7 @@ export class SettingsComponent implements OnInit{
   private userService = inject(UserService);
   private authStateService = inject(AuthStateService);
   private toastService = inject(ToastService);
+  private uniqueUsernameValidator = inject(UniqueUsernameValidator);
 
   currentUser = this.authStateService.userDetails$;
 
@@ -52,60 +56,25 @@ export class SettingsComponent implements OnInit{
   invalidUsernames = new Set<string>(['']);
 
   changeUsernameForm = this.formBuilder.group<FormChangeUsernameModel>({
-    newUsername: this.formBuilder.control('', [Validators.required, noWhitespaceValidator]),
-  })
+    newUsername: this.formBuilder.control(
+      '',
+      Validators.required,
+      this.uniqueUsernameValidator.validate.bind(this.uniqueUsernameValidator)
+    ),
+  },{ updateOn : "blur" })
 
   changePasswordForm = this.formBuilder.group<FormChangePasswordModel>({
-    oldPassword: this.formBuilder.control('', [Validators.required, noWhitespaceValidator]),
-    newPassword: this.formBuilder.control('', [Validators.required, noWhitespaceValidator]),
-    confirmNewPassword: this.formBuilder.control('', [Validators.required, noWhitespaceValidator])
-  });
+    oldPassword: this.formBuilder.control('', Validators.required),
+    newPassword: this.formBuilder.control('', Validators.required),
+    confirmNewPassword: this.formBuilder.control('', Validators.required)
+  },
+    {
+      validators: [
+        differentOldAndNewPasswordValidator('oldPassword','newPassword'),
+        samePasswordConfirmationValidator('newPassword','confirmNewPassword')
+      ]}
+  );
 
-  ngOnInit(): void {
-    // Username form
-    this.changeUsernameForm.get('newUsername')?.valueChanges
-      .pipe(
-        debounceTime(500),
-        distinctUntilChanged()
-      )
-      .subscribe((value) => {
-        this.checkUsernameValidity(value);
-      });
-
-    // Passwords form
-    this.changePasswordForm.valueChanges.pipe(
-      debounceTime(500),
-      distinctUntilChanged()
-    )
-      .subscribe((value) => {
-        this.checkPasswordValidity(value);
-      })
-    ;
-
-  }
-
-  checkPasswordValidity(passwords: Partial<{ oldPassword:string, newPassword: string, confirmNewPassword: string}>){
-    const { oldPassword, newPassword, confirmNewPassword } = passwords;
-
-    this.changePasswordForm.setErrors(null);
-
-    if (oldPassword && newPassword && oldPassword === newPassword) {
-      this.changePasswordForm.get('oldPassword')?.setErrors({ OldNewSame: true });
-    } else if (newPassword && confirmNewPassword && newPassword !== confirmNewPassword) {
-      this.changePasswordForm.get('newPasswordAgain')?.setErrors({ newPasswordDoesntMatch: true });
-    }
-
-  }
-
-
-  checkUsernameValidity(value: string) {
-    const control = this.changeUsernameForm.get('newUsername');
-    if (this.invalidUsernames.has(value.trim())) {
-      control?.setErrors({ usernameTaken: true });
-    } else {
-      control?.setErrors(null);
-    }
-  }
 
   showUsernameForm(){
     this.changeUsernameVisible = true;
@@ -163,5 +132,18 @@ export class SettingsComponent implements OnInit{
   closePasswordFormDialog(){
     this.changePasswordVisible = false;
     this.changePasswordForm.reset();
+  }
+
+  getUsernameChangeControl(name: string){
+    return this.changeUsernameForm.get(name)! as FormControl<string>;
+  }
+
+  getPasswordChangeControl(name: string){
+    return this.changePasswordForm.get(name)! as FormControl<string>;
+  }
+
+
+  goBack(){
+    window.history.back();
   }
 }

@@ -11,17 +11,17 @@ export const componentRoutes: Routes = [
     component: ComponentListComponent
   },
   {
+    path: 'create',
+    canActivate: [authGuard],
+    component: ComponentCreationComponent
+  },
+  {
     path: 'user/:username/component/:componentName',
     component: ComponentShowcaseComponent
   },
   {
     path: 'user/:username',
     component: UserProfileComponent
-  },
-  {
-    path: 'create',
-    canActivate: [authGuard],
-    component: ComponentCreationComponent
   },
   { path: '**', redirectTo: '/notFound' }
 ];

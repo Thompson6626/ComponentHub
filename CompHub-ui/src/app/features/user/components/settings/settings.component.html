@@ -1,15 +1,19 @@
-@let usernameForm = changeUsernameForm.get('newUsername');
-@let oldPasswordForm = changeUsernameForm.get('oldPassword');
-@let confirmNewPasswordForm = changePasswordForm.get('confirmNewPassword');
+<div class="bg-gray-50 dark:bg-gray-900 min-h-screen py-12 px-6">
+  <div class="flex justify-start max-w-3xl mb-4">
+    <p-button (onClick)="goBack()" severity="contrast" class="p-button-text p-3 flex items-center gap-2">
+      <i class="pi pi-arrow-left text-lg"></i>
+      <span>Go Back</span>
+    </p-button>
+  </div>
 
-<div class="bg-gray-50 dark:bg-gray-900 min-h-screen py-8">
-  <h1 class="text-4xl font-bold text-white mb-6 flex justify-center">Settings</h1>
-
+  <!-- Page Title -->
+  <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-8 text-center">Settings</h1>
   <!-- User Details Card -->
-  <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl max-w-3xl mx-auto space-y-8">
+  <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl max-w-3xl mx-auto space-y-8 border border-gray-200 dark:border-gray-700">
 
     @if (currentUser | async; as user) {
       <div class="space-y-6">
+
         <!-- Username -->
         <div class="flex items-center justify-between border-b border-gray-300 dark:border-gray-700 pb-4">
           <span class="font-semibold text-lg text-gray-800 dark:text-gray-100 w-40">Username:</span>
@@ -22,7 +26,7 @@
               class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             />
             <i
-              class="pi pi-pencil text-blue-500 cursor-pointer absolute right-4 top-1/2 -translate-y-1/2"
+              class="pi pi-pencil text-blue-500 hover:text-blue-600 cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
               (click)="showUsernameForm()"
             ></i>
           </div>
@@ -42,7 +46,7 @@
 
         <!-- Password Update Button -->
         <div class="text-left">
-          <span class="text-lg font-semibold text-blue-500 cursor-pointer hover:text-blue-700"
+          <span class="text-lg font-semibold text-blue-500 cursor-pointer hover:text-blue-700 transition-colors"
                 (click)="showPasswordForm()">
             Update Password
           </span>
@@ -51,39 +55,18 @@
     }
   </div>
 
+  <!-- Change Username Dialog -->
   <p-dialog header="Change Username" [modal]="true" [(visible)]="changeUsernameVisible" [style]="{ width:'25rem'}" draggable="false">
     <form [formGroup]="changeUsernameForm" (ngSubmit)="onChangeUsername()">
-      <div class="p-fluid">
-        <div class="mb-4">
-          <label for="username" class="block">New Username:</label>
-          <input
-            id="username"
-            type="text"
-            formControlName="newUsername"
-            pInputText
-            class="w-full mt-3"
-          />
-          @if (usernameForm?.touched) {
-            @if (usernameForm?.hasError('required') || usernameForm?.hasError('blank')){
-              <div class="text-red-500 text-sm">
-                New username must not be blank.
-              </div>
-            }
-            @else if (usernameForm?.hasError('usernameTaken')) {
-              <div class="text-red-500 text-sm">
-                Username not available.
-              </div>
-            }
-          }
-        </div>
-      </div>
+
+      <app-form-input [formControl]="getUsernameChangeControl('newUsername')" controlName="newUsername" ngDefaultControl/>
 
       <!-- Buttons -->
-      <div class="flex justify-end space-x-2 mt-4">
+      <div class="flex justify-end gap-3 mt-4">
         <p-button
           type="button"
           label="Cancel"
-          styleClass="p-button-secondary"
+          styleClass="p-button-secondary p-button-outlined"
           (click)="changeUsernameVisible = false">
         </p-button>
         <p-button
@@ -96,61 +79,22 @@
     </form>
   </p-dialog>
 
+  <!-- Change Password Dialog -->
   <p-dialog header="Change Password" [modal]="true" [(visible)]="changePasswordVisible" [style]="{ width:'25rem'}">
     <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
-      <div class="p-fluid">
-        <div class="mb-4">
-          <label for="oldPassword" class="block">Current Password:</label>
-          <p-password
-            id="oldPassword"
-            formControlName="oldPassword"
-            styleClass="mt-3"
-            fluid="true"
-            [toggleMask]="true"
-            feedback="false"
-          />
-          @if(oldPasswordForm?.touched && (oldPasswordForm?.hasError('required') || oldPasswordForm?.hasError('blank'))){
-            <div class="text-red-500 text-sm">
-              You must provide your old password.
-            </div>
-          }
-        </div>
-        <div class="mb-4">
-          <label for="newPassword" class="block">New Password:</label>
-          <p-password
-            id="newPassword"
-            formControlName="newPassword"
-            styleClass="mt-3"
-            fluid="true"
-            [toggleMask]="true"
-            feedback="false"
-          />
-        </div>
-        <div class="mb-4">
-          <label for="confirmNewPassword" class="block">Confirm New Password:</label>
-          <p-password
-            id="confirmNewPassword"
-            formControlName="confirmNewPassword"
-            styleClass="mt-3"
-            fluid="true"
-            [toggleMask]="true"
-            feedback="false"
-          />
-          @if(changePasswordForm.get('newPassword')?.touched && confirmNewPasswordForm?.touched && confirmNewPasswordForm?.hasError('newPasswordDoesntMatch')){
-            <div class="text-red-500 text-sm">
-              New password doesn't match.
-            </div>
-          }
-        </div>
 
-      </div>
+      <app-form-input [formControl]="getPasswordChangeControl('oldPassword')" controlName="oldPassword" ngDefaultControl/>
+
+      <app-form-input [formControl]="getPasswordChangeControl('newPassword')" controlName="newPassword" ngDefaultControl/>
+
+      <app-form-input [formControl]="getPasswordChangeControl('confirmNewPassword')" controlName="confirmNewPassword" ngDefaultControl/>
 
       <!-- Buttons -->
-      <div class="flex justify-end space-x-2 mt-4">
+      <div class="flex justify-end gap-3 mt-4">
         <p-button
           type="button"
           label="Cancel"
-          styleClass="p-button-secondary"
+          styleClass="p-button-secondary p-button-outlined"
           (click)="changePasswordVisible = false">
         </p-button>
         <p-button

@@ -16,6 +16,7 @@ export interface Loaded<T> {
 export interface Errored {
   state: State.Error;
   error: Error;
+  networkError?: true;
 }
 
 export type LoadingState<T = unknown> = Loading | Loaded<T> | Errored;

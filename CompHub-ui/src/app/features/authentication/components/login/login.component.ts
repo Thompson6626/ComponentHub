@@ -1,15 +1,12 @@
 import {Component, inject} from '@angular/core';
 import {Button} from 'primeng/button';
 import {FormControl, FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {InputText} from 'primeng/inputtext';
-import {Password} from 'primeng/password';
 import {AuthService} from '../../services/Auth/auth.service';
 import {Router, RouterLink} from '@angular/router';
 
-import {FloatLabel} from 'primeng/floatlabel';
 import {ToastService} from '../../../../core/services/Toast/toast.service';
-import { isTouchedAndIsRequired } from '../../../../shared/utils/form-utils';
-import {AuthStateService} from '../../../../core/services/AuthState/auth-state.service';
+import {FormInputComponent} from '../../../../shared/components/form-input/form-input.component';
+import {AuthWrapperComponent} from '../auth-wrapper/auth-wrapper.component';
 
 
 
@@ -23,11 +20,10 @@ export interface FormLogIn {
   imports: [
     Button,
     FormsModule,
-    InputText,
-    Password,
     ReactiveFormsModule,
-    FloatLabel,
-    RouterLink
+    RouterLink,
+    FormInputComponent,
+    AuthWrapperComponent
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.sass'
@@ -64,8 +60,7 @@ export class LoginComponent{
     });
   }
 
-  isTouchedAndIsRequired(field: string){
-    return isTouchedAndIsRequired(field,this.form);
+  getControl(name: string){
+    return this.form.get(name)! as FormControl<string>;
   }
-
 }
