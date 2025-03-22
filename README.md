@@ -21,7 +21,7 @@ Component Hub is a full-stack web application designed to manage and showcase UI
 
 ### 1️⃣ Clone the Repository
 ```sh
-git clone https://github.com/Thompson6626/your-project.git
+git clone https://github.com/Thompson6626/ComponentHub.git
 cd your-project
 ```
 
