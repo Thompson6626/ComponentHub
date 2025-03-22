@@ -7,8 +7,8 @@ Component Hub is a full-stack web application designed to manage and showcase UI
 ## 🏗️ Folder Structure
 ```
 /project-root
-│── CompHub/   # Frontend
-│── CompHub-ui/    # Backend  
+│── CompHub/   # Backend
+│── CompHub-ui/    # Frontend  
 ```
 
 ## 🚀 Tech Stack
