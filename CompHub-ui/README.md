@@ -2,6 +2,8 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.0.
 
+![Landing Page Image](assets/landing-page.png)
+
 ## Development server
 
 To start a local development server, run:
