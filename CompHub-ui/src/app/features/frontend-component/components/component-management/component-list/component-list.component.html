@@ -5,21 +5,23 @@
 
   <!-- Categories Sidebar -->
   <aside class="bg-gray-50 border border-gray-200 rounded-xl shadow-md w-full md:w-1/5 p-6">
-    @if (categoryList$ | async; as categories) {
+
+  @if (categoryList$ | async; as categories) {
       @if (categories.state === State.Loaded) {
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Categories</h2>
-        <div class="flex flex-col gap-3">
-          @for (category of categories.data; track category.id) {
-            <label class="text-gray-700 text-base flex items-center gap-2 cursor-pointer">
-              <p-checkbox
-                binary="true"
-                (onChange)="onCategorySelected($event, category.name)"
-                size="large"
-              ></p-checkbox>
-              {{ category.name }}
-            </label>
-          }
-        </div>
+          <h2 class="text-lg font-semibold text-gray-800 mb-4">Categories</h2>
+          <div class="flex flex-col gap-3">
+            @for (category of categories.data; track category.id) {
+              <label class="text-gray-700 text-base flex items-center gap-2 cursor-pointer">
+                <p-checkbox
+                  binary="true"
+                  (onChange)="onCategorySelected($event, category.name)"
+                  size="large"
+                ></p-checkbox>
+                {{ category.name }}
+              </label>
+            }
+          </div>
+
       }
     }
   </aside>
@@ -64,18 +66,18 @@
   </section>
 </div>
 
-<!-- Loading & Error States -->
-@if (componentPage.state === State.Loading) {
-  <div class="flex justify-center items-center h-screen">
-    <p-progress-spinner ariaLabel="loading" />
-  </div>
-} @else if (componentPage.state === State.Error) {
-  <div class="flex justify-center items-center h-screen">
-    <p class="text-xl text-red-600 font-semibold text-center bg-red-100 p-4 rounded-lg shadow">
-      Something went wrong. Please try again later.
-    </p>
-  </div>
-}
+<div class="flex flex-col justify-center items-center h-screen">
+  @if (componentPage$ | async; as componentPage) {
+    @if (componentPage.state === State.Loading) {
+      <p-progress-spinner ariaLabel="loading" />
+    } @else if (componentPage.state === State.Error){
+      <p class="text-xl text-red-600 font-semibold text-center bg-red-100 p-4 rounded-lg shadow">
+        Something went wrong. Please try again later.
+      </p>
+    }
+  }
+</div>
+
 
 <!-- Pagination -->
 @if (componentPage.state === State.Loaded && componentPage.data.content.length > 0) {

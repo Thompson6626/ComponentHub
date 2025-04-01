@@ -52,6 +52,7 @@ security:
       expiration: 604800000
   activation_url: http://localhost:${server.port}${server.servlet.context-path}/auth/verify-email?token=
 
+
 server:
   servlet:
     context-path: /api/v1

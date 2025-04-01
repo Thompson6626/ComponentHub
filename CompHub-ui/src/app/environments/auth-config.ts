@@ -10,3 +10,4 @@ export const authConfig = {
   resendVerification: `${authUrl}/resend-verification`,
   logout: `${authUrl}/logout`,
 };
+

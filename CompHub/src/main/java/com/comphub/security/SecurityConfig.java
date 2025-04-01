@@ -38,7 +38,7 @@ public class SecurityConfig {
             "/components/user/{username}/component/{componentName}",
             "/components/{componentId}",
             "/components/user/{username}",
-            "/components/categories",
+            "/components/category",
             "/components/user/{username}/names",
             // Component file
             "/components/files/{fileId}",

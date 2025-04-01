@@ -5,6 +5,7 @@ import {authRotes} from './features/authentication/auth.routes';
 import {userRoutes} from './features/user/user.routes';
 import {alreadyAuthenticatedGuard} from './core/guards/AlreadyAuthenticated/already-authenticated.guard';
 import {componentRoutes} from './features/frontend-component/component.routes';
+import {LandingPageComponent} from './pages/landing-page/landing-page.component';
 
 export const routes: Routes = [
   {
@@ -15,6 +16,10 @@ export const routes: Routes = [
   {
     path: 'profile',
     children: userRoutes
+  },
+  {
+    path: '',
+    component: LandingPageComponent
   },
   {
     path: '',

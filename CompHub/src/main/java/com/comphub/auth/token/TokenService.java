@@ -34,8 +34,7 @@ public class TokenService {
     }
 
     public TokenWrapper generateToken(final User user) {
-        return buildToken(user, refreshExpiration);
-
+        return buildToken(user, jwtExpiration);
     }
 
     public TokenWrapper generateRefreshToken(final User user) {

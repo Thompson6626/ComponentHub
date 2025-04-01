@@ -5,12 +5,12 @@ import com.comphub.auth.token.Token;
 import com.comphub.auth.token.TokenRepository;
 import com.comphub.auth.token.TokenService;
 import com.comphub.user.User;
-import com.comphub.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -25,12 +25,12 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @Component
 @RequiredArgsConstructor
+@Log
 public class JwtFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
     private final UserDetailsService userDetailsService;
     private final TokenRepository tokenRepository;
-    private final UserRepository userRepository;
 
 
     // Looking to
@@ -54,6 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         final String jwtToken = authHeader.substring(7);
+
         final String username = tokenService.extractUsername(jwtToken);
 
         if (username == null || SecurityContextHolder.getContext().getAuthentication() != null) {

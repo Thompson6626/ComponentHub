@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+import {Injectable, OnInit} from '@angular/core';
 import {TokenResponse} from '../../models/token-reponse';
 import {TokenWrapper} from '../../models/token-wrapper';
 
 @Injectable({
   providedIn: 'root'
 })
-export class TokenService {
+export class TokenService{
 
   private accessToken = 'access_token';
   private accessTokenExpiration = 'access_token_expiration';
