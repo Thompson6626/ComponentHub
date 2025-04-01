@@ -67,7 +67,6 @@
 </div>
 
 <div class="flex flex-col justify-center items-center h-screen">
-  @if (componentPage$ | async; as componentPage) {
     @if (componentPage.state === State.Loading) {
       <p-progress-spinner ariaLabel="loading" />
     } @else if (componentPage.state === State.Error){
@@ -75,7 +74,6 @@
         Something went wrong. Please try again later.
       </p>
     }
-  }
 </div>
 
 
